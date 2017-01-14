@@ -1,0 +1,250 @@
+---
+title: "Chapter 2 - Statistical Learning"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+#What is statistical learning?
+
+Input variables are denoted using the symbol $X$. Other names for it are: *predictors*, *independent variables*, *features*, or just *variables*.
+
+Output variables are typucally denoted using the symbol $Y$, and are often called *response* or *dependent variable*.
+
+We assume there is a relationship between $Y$ and $X = (X_1,X_2,...,X_p)$ which can be written in the general form:
+
+$$Y=f(X) + \epsilon$$
+
+Where $f$ is a fixed but unknown function of the independent variables and $\epsilon$ is an *error term* of mean zero. Here $f$ represents the *systematic* information that $X$ provides about $Y$.
+
+### Why estimate f?
+
+**Prediction**
+
+Sometimes we may have a set of inputs $X$ available but not the output $Y$. Since the error term has mean zero, we can predict $Y$ using
+
+$$\hat{Y} = \hat{f}(X)$$
+
+Where $\hat{f}$ represents our estimate for $f$ and $\hat{Y}$ our prediction of $Y$. The accuracy of $\hat{Y}$ will depend on the *reducible error* and *irreducible error*. The former is *reducible* because they are errors in which we can potentially improve our estimate of $f$. However, even if we could form a perfect estimate of $f$, such that $\hat{Y} = f(X)$, our prediction would still have some error in it because of $\epsilon$, so this would be our *irreducible error* because no matter how well we estimate $f$, we cannot reduce that source of error.
+
+Assume for a moment that both $\hat{f}$ and $X$ are fixed. Then
+
+$$E(Y-\hat{Y})^2 = E[f(x)+\epsilon - \hat{f}(X)]^2 = [f(X)-\hat{f}(X)]^2 + Var(\epsilon)$$
+
+Where the left side of the right part of the expression is the reducible part and the right side is the irreducible one, i.e. $Var(\epsilon) represents the *variance* associated with the error term $\epsilon$. 
+
+$E(Y-\hat{Y})^2$ represents the average, or *expected value* of the squared difference between the predicted and actual value of $Y$. 
+
+**Inference**
+
+In the previous part we were interest in $\hat(X)$ as a sort of black box; we didn't need to know the exact form of the function, we just wanted a good output. However, sometimes we might want to know the way that $Y$ is affected as the independent variables change. In this situation, we cannot treat $\hat{f}$ as a black box, we need its exact form.
+
+In this setting, one may be interested in answering the following questions:
+
+1. Which predictors are associated with the response?
+2. What is the relationship between the response and each predictor?
+3. Can the relationship between $Y$ and each predictor be adequately summarized using a linear equation, or is the relationship more complicated?
+
+Depending on whether our ultimate goal is prediction, inference, or a combination of the two, different methods for estimating $f$ may be appropriate. For example, *linear models* allow for relatively simple and interpretable inference, but may not yield as accurate predictions as some other approaches. In contrast, some of the highly non-linear approaches that we discuss later can potentially provide quate accurate predictions for $Y$, but this comes at the expense of a less interpretable model for which inference is more challenging.
+
+**How do we estimate f?**
+
+Let $x_{ij}$ represent the value of the $j$th predictor, or input, for observation $i$, where $i = 1,2,...,n$ and $j = 1,2,...,p$. Let $y_i$ represent the response variable for the $i$th observation. Then our training data consists of ${(x_1,y_1),(x_2,y_2),...,(x_n,y_n)}$ where $x_i = (x_{i1},x_{i2},...,x_{ip})$.  Our goal is to apply a statistical learning method to the training data in order to estimate the unknown function $f$. Broadly speacking, most statistical learning methods for this task can be characterized as either *parametric* or *non-parametric*
+
+** Parametric methods**
+
+Parametric methods involve a two-step model-based approach:
+
+1. First, we make an assumption about the functional form, or shape of $f$. For example, one very simple assumption is that $f$ is linear in X:
+
+$$f(X) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_p X_p$$
+
+2. After a model has been selected, we need a procedure that uses the training data to *fit* or *train* the model. In the case of the linear model above, we need to estimate the parameters $\beta_0,\beta_1,...,\beta_p$. That is, we want to find values of these parameters such that 
+
+$$Y \approx \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_p X_p$$
+
+The model-based approach just described is referred to as *parametric* because it reduces the problem of estimating $f$ down to one of estimating a set of parameters. The potential disadvantage of a parametric approach is that the model we choose will usually not match the unknown form of $f$. We can try to address this problem by choosing *flexible* models, but in general, fitting a more flexible model requires estimating a greater number of parameters. These more complex models can lead to a phenomenon known as *overfitting* the data, which essentially means they follow the errors, or *noise*, too closely.
+
+**Non-parametric methods** 
+
+Non-parametric methods do not make explicit assumptions about the functional form of $f$. Such approaches can have a major advantage over parametric approaches since they avoid the assumption of a particular functional form of the function, so they can accurately fit a wider range of possible shapes. However, non-parametric approaches have the problem that since they do not reduce the problem to estimating a number of parameters, a very large number of observations is required in order to obtain an accurate estimate for $f$.
+
+### Assessing model accuracy
+
+** Measuring the quality of fit **
+
+In order to evaluate the performance of a statistical learning method on a given data set, we need some way to measure how well its predictions actually match the observed data. That is, we need to quantify the extent to which the predicted response value for a given observation is close to the true response value for that observation. In the regression setting, the most commonly-used measure is the *mean squared error* (MSE), given by
+
+$$MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{f}(x_i))^2$$
+
+The MSE will be small if the predicted responses are very close to the true responses, and will be large if for some of the observations, the predicted and true responses differ substantially.
+
+Suppose that we fit our statistical learning method on our training observations and we obtain the estimate $\hat{f}$. We can then compute the $\hat{f}(x_1),\hat{f}(x_2),...,\hat{f}(x_n)$. If these are approimately equal to $y_1,y_2,...,y_n$, them the training MSE is small. However, we are interested not in obtaining a good fit with a training set, but with a test set. But what if no test observations are available? A sensible approach would be just to use a statistical method that minimizes the training MSE, but there is no guarantee that the method with the lowest training MSE will also have the lowest test MSE.
+
+In practice one can usually compute the training MSE with relative ease, but estimating test MSE is considerably more difficult because usually no test data are available. One important method is *cross-validation* (Chapter 5), which is a method for estimating test MSE using the training data.
+
+**The bias-variance trade-off**
+
+Though the mathematical proof is beyond the scope of this book, it is possible to show that the expected test MSE, for a given value $x_0$, can always be decomposed into the sum of three fundamental quantitities: The *variance* of $\hat{f}(x_0)$, the squared *bias* of $\hat{f}(x_0)$, and the variance of the error terms $\epsilon$. That is:
+
+$$E(y_0 - \hat{f}(x_0))^2 = Var(\hat{f}(x_0)) + Bias(\hat{f}(x_0))^2 + Var(\epsilon)$$
+
+This equation tells us that in order to minimize the expected test error, we need to select a statistical learning method that simultaneously achieves *low variance* and *low bias*. Not that variance and square bias are nonnegative quantities, hence the expected MSE can never lie below $Var(\epsilon)$, the irreducible error.
+
+What do we mean by the variance and bias of a statistical learning method?
+
+- Variance refers to the amount by which $\hat{f}$ would change if we estimated it using a different training data set.
+
+- Bias refers to the error that is introduced by approximating a real-life problem, which may be extremely complicated, by a much simpler model.
+
+As a general rule, as we use more flexible methods, the variance will increase and the bias will decrease. The relative rate of change of these two quantities determines whether the test MSE increases or decreases. The relationship between bias, variance, and test set MSE given in the above equation is referred to as the *bias-variance- trade-off*.This is referred to as a trade-off because it is easy to obtain a method with extremely low bias but high variance (for instance, by drawing a curve that passes through every single training observation) or a method with very low variance but high bias (by fitting a horizontal line to the data).
+
+**The classification setting** 
+
+Many of the concepts we've seen in the regression setting, such as the bias-variance trade-off, transfer over to the classification setting with some modifications due to the fact that $y_i$ no longer is numerical. The most common approach for quantifying the accuracy of our estimate $\hat{f}$ is the training *error rate*, the proportion of mistakes that are made if we apply our estimate to the training observations.
+
+$$\frac{1}{n} \sum_{i=1}^n I(y_i \neq \hat{y}_i)$$
+Where $I(y_i \neq \hat{y}_i$ is an *indicator variable* that equals 1 if they are not equal, and zero if they are. Hence the euqation computes the incorrect classifications.
+
+The *test error* rate associated with a set of test observations of the form $(x_0,y_0)$ is given by
+
+$$Ave(I(y_0 \neq \hat{y_0}))$$
+
+Where $\hat{y_0}$ is the predicted class label that results from applying the classifier to the test observation with predictor $x_0$. A *good* classifier is one for which the test error is smallest. It is possible to show that the test error rate is minimzed, on average, by a very simple classifier that *assigns each observation to the most likely class, given its predictor values.* In other words, we should ismply assign a test observation with predicctor vector $x_0$ to the class $j$ for which
+
+$$Pr(Y=j | X = x_0)$$
+
+is largest. Note that this is a *conditional probability*: it is the probability that $Y=j$ given the observed predictor vector $x_0$ This very simple classifier is called the *Bayes classifier*. In a two-class problem where there are only two possible responses, say *class 1* or *class 2*, the Bayes classifier corresponds to predicting class one if $Pr(Y=1 | X = x_0) >0.5$, and class two otherwise.
+
+The Bayes classifier produces the lowest possibl test error rate, called the *Bayes error rate*. Since the Bayes classificer will always choose the class for which the conditional probability is lrgets, the error rate will be $1-max_j Pr(Y=j|X=x_0)$. In general, the overall Bayes error rate is given by 
+
+$$1-E\left (max_j PR(Y=j|X) \right )$$
+
+The Bayes error rate is analogous to the irreducible error, discussed earlier. In theory we would always like to predict qualitative responses using the Bayes classifier, but for real data, we do not know the conditional distribution of $Y4 given $X$, and so computing the Bayes classifier is impossible.
+
+### Lab: Introduction to R
+
+The following command creates a vector of numbers using the function c() (for *concatenate*).
+**Basic Commands**
+```{r}
+x = c(1,2,3,4,5,6,10)
+x
+```
+
+Typing *?funcname*, where *funcname* is the function's name, will cause *R* to open a new help file window with additional information about the function.
+
+```{r}
+length(x)
+y = c(1,2,3,4,5,6,7,8,9,10,11)
+length(y)
+x+y
+z = c(1,2,3,4,5,6,7)
+z+x
+```
+As you can see, adding two sets of numbers will add the numbers in each set's corresponding place. This is why *x+y* doesn't work, because they don't have the same length.
+
+```{r}
+ls()
+rm(x,y,z)
+ls()
+```
+
+The *ls()* function allows us to look at a list of all the objects that we have saved so far. The *rm()* function can be used to delete any what we don't want.
+
+It's also possible to remove all objects at once:
+```{r}
+rm(list=ls())
+```
+
+```{r}
+x = matrix(data=c(1,2,3,4),nrow=2,ncol=2)
+x
+```
+
+We could omit some things from the *matrix()* function above ang get the save result:
+
+```{r}
+x=matrix(c(1,2,3,4),2,2)
+x
+```
+
+By default matrices are successively filled in columns, but we can populate it in order of the rows
+```{r}
+matrix(c(1,2,3,4),2,2,byrow=TRUE)
+```
+
+We can call functions on the matrix
+```{r}
+sqrt(x)
+x^2
+```
+
+By default *rnorm()* creates standard normal random variables with a mean of 0 and a s.d. of 1, but these can be changed.
+
+```{r}
+x = rnorm(5)
+x
+y = rnorm(5,mean=50,sd=.1)
+y
+cor(x,y)
+```
+
+```{r}
+set.seed(3)
+y=rnorm(100)
+mean(y)
+var(y)
+sqrt(var(y))
+sd(y)
+```
+
+**Graphics**
+
+```{r}
+x=rnorm(100)
+y=rnorm(100)
+```
+
+```{r}
+plot(x,y)
+```
+
+```{r}
+plot(x,y,xlab="this is the x-axis",ylab="this is the y axis",main="plot of x and y")
+```
+
+We often want to save the output of an R plot. TO do this we can, for instance, use the *pdf()* function to create a pdf, and the *jpeg()* function to create a jpeg. 
+
+The function *seq()* can be used to create a sequence of numbers.
+```{r}
+x = seq(1,10)
+x
+x = 1:10
+x
+x = seq(0,1,length=10)
+x
+```
+
+**Indexing data**
+
+```{r}
+A = matrix(1:16,4,4)
+A 
+```
+
+```{r}
+A[2,3]
+A[1,]
+```
+
+The *dim()* function size of the matrix, or the number of rows and columns
+```{r}
+dim(A)
+```
+
+**Loading data**
+
+For most analyses, the first step involves importing a data set into R. The *read.table()* function is one of the primary ways to do this. We can use the function *write.table()* to export data.
+
+Excel is a common-format data storage program. An easy way to load such data into R is to save it as a csv file and then use the *read.csv()* function to load it in
+
