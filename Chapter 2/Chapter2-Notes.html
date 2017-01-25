@@ -135,7 +135,7 @@ $(document).ready(function () {
 <p>Where <span class="math inline">\(\hat{f}\)</span> represents our estimate for <span class="math inline">\(f\)</span> and <span class="math inline">\(\hat{Y}\)</span> our prediction of <span class="math inline">\(Y\)</span>. The accuracy of <span class="math inline">\(\hat{Y}\)</span> will depend on the <em>reducible error</em> and <em>irreducible error</em>. The former is <em>reducible</em> because they are errors in which we can potentially improve our estimate of <span class="math inline">\(f\)</span>. However, even if we could form a perfect estimate of <span class="math inline">\(f\)</span>, such that <span class="math inline">\(\hat{Y} = f(X)\)</span>, our prediction would still have some error in it because of <span class="math inline">\(\epsilon\)</span>, so this would be our <em>irreducible error</em> because no matter how well we estimate <span class="math inline">\(f\)</span>, we cannot reduce that source of error.</p>
 <p>Assume for a moment that both <span class="math inline">\(\hat{f}\)</span> and <span class="math inline">\(X\)</span> are fixed. Then</p>
 <p><span class="math display">\[E(Y-\hat{Y})^2 = E[f(x)+\epsilon - \hat{f}(X)]^2 = [f(X)-\hat{f}(X)]^2 + Var(\epsilon)\]</span></p>
-<p>Where the left side of the right part of the expression is the reducible part and the right side is the irreducible one, i.e. $Var() represents the <em>variance</em> associated with the error term <span class="math inline">\(\epsilon\)</span>.</p>
+<p>Where the left side of the right part of the expression is the reducible part and the right side is the irreducible one, i.e. <span class="math inline">\(Var(\epsilon)\)</span> represents the <em>variance</em> associated with the error term <span class="math inline">\(\epsilon\)</span>.</p>
 <p><span class="math inline">\(E(Y-\hat{Y})^2\)</span> represents the average, or <em>expected value</em> of the squared difference between the predicted and actual value of <span class="math inline">\(Y\)</span>.</p>
 <p><strong>Inference</strong></p>
 <p>In the previous part we were interest in <span class="math inline">\(\hat(X)\)</span> as a sort of black box; we didn’t need to know the exact form of the function, we just wanted a good output. However, sometimes we might want to know the way that <span class="math inline">\(Y\)</span> is affected as the independent variables change. In this situation, we cannot treat <span class="math inline">\(\hat{f}\)</span> as a black box, we need its exact form.</p>
@@ -148,7 +148,7 @@ $(document).ready(function () {
 <p>Depending on whether our ultimate goal is prediction, inference, or a combination of the two, different methods for estimating <span class="math inline">\(f\)</span> may be appropriate. For example, <em>linear models</em> allow for relatively simple and interpretable inference, but may not yield as accurate predictions as some other approaches. In contrast, some of the highly non-linear approaches that we discuss later can potentially provide quate accurate predictions for <span class="math inline">\(Y\)</span>, but this comes at the expense of a less interpretable model for which inference is more challenging.</p>
 <p><strong>How do we estimate f?</strong></p>
 <p>Let <span class="math inline">\(x_{ij}\)</span> represent the value of the <span class="math inline">\(j\)</span>th predictor, or input, for observation <span class="math inline">\(i\)</span>, where <span class="math inline">\(i = 1,2,...,n\)</span> and <span class="math inline">\(j = 1,2,...,p\)</span>. Let <span class="math inline">\(y_i\)</span> represent the response variable for the <span class="math inline">\(i\)</span>th observation. Then our training data consists of <span class="math inline">\({(x_1,y_1),(x_2,y_2),...,(x_n,y_n)}\)</span> where <span class="math inline">\(x_i = (x_{i1},x_{i2},...,x_{ip})\)</span>. Our goal is to apply a statistical learning method to the training data in order to estimate the unknown function <span class="math inline">\(f\)</span>. Broadly speacking, most statistical learning methods for this task can be characterized as either <em>parametric</em> or <em>non-parametric</em></p>
-<p>** Parametric methods**</p>
+<p><strong>Parametric methods</strong></p>
 <p>Parametric methods involve a two-step model-based approach:</p>
 <ol style="list-style-type: decimal">
 <li>First, we make an assumption about the functional form, or shape of <span class="math inline">\(f\)</span>. For example, one very simple assumption is that <span class="math inline">\(f\)</span> is linear in X:</li>
@@ -164,7 +164,7 @@ $(document).ready(function () {
 </div>
 <div id="assessing-model-accuracy" class="section level3">
 <h3>Assessing model accuracy</h3>
-<p>** Measuring the quality of fit **</p>
+<p><strong>Measuring the quality of fit</strong></p>
 <p>In order to evaluate the performance of a statistical learning method on a given data set, we need some way to measure how well its predictions actually match the observed data. That is, we need to quantify the extent to which the predicted response value for a given observation is close to the true response value for that observation. In the regression setting, the most commonly-used measure is the <em>mean squared error</em> (MSE), given by</p>
 <p><span class="math display">\[MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{f}(x_i))^2\]</span></p>
 <p>The MSE will be small if the predicted responses are very close to the true responses, and will be large if for some of the observations, the predicted and true responses differ substantially.</p>
@@ -173,16 +173,17 @@ $(document).ready(function () {
 <p><strong>The bias-variance trade-off</strong></p>
 <p>Though the mathematical proof is beyond the scope of this book, it is possible to show that the expected test MSE, for a given value <span class="math inline">\(x_0\)</span>, can always be decomposed into the sum of three fundamental quantitities: The <em>variance</em> of <span class="math inline">\(\hat{f}(x_0)\)</span>, the squared <em>bias</em> of <span class="math inline">\(\hat{f}(x_0)\)</span>, and the variance of the error terms <span class="math inline">\(\epsilon\)</span>. That is:</p>
 <p><span class="math display">\[E(y_0 - \hat{f}(x_0))^2 = Var(\hat{f}(x_0)) + Bias(\hat{f}(x_0))^2 + Var(\epsilon)\]</span></p>
-<p>This equation tells us that in order to minimize the expected test error, we need to select a statistical learning method that simultaneously achieves <em>low variance</em> and <em>low bias</em>. Not that variance and square bias are nonnegative quantities, hence the expected MSE can never lie below <span class="math inline">\(Var(\epsilon)\)</span>, the irreducible error.</p>
+<p>This equation tells us that in order to minimize the expected test error, we need to select a statistical learning method that simultaneously achieves <em>low variance</em> and <em>low bias</em>. Note that variance and square bias are nonnegative quantities, hence the expected MSE can never lie below <span class="math inline">\(Var(\epsilon)\)</span>, the irreducible error.</p>
+<p>Here the notation <span class="math inline">\(E(y_0 - \hat{f}(x_0))^2\)</span> defines the <em>expected test MSE</em>, and refers to the average test MSE that we would obtain if we repeatedly estimated <span class="math inline">\(f\)</span> using a large number of training sets, and tested each at <span class="math inline">\(x_0\)</span>.</p>
 <p>What do we mean by the variance and bias of a statistical learning method?</p>
 <ul>
-<li><p>Variance refers to the amount by which <span class="math inline">\(\hat{f}\)</span> would change if we estimated it using a different training data set.</p></li>
-<li><p>Bias refers to the error that is introduced by approximating a real-life problem, which may be extremely complicated, by a much simpler model.</p></li>
+<li><p><strong>Variance</strong> refers to the amount by which <span class="math inline">\(\hat{f}\)</span> would change if we estimated it using a different training data set.</p></li>
+<li><p><strong>Bias</strong> refers to the error that is introduced by approximating a real-life problem, which may be extremely complicated, by a much simpler model.</p></li>
 </ul>
-<p>As a general rule, as we use more flexible methods, the variance will increase and the bias will decrease. The relative rate of change of these two quantities determines whether the test MSE increases or decreases. The relationship between bias, variance, and test set MSE given in the above equation is referred to as the <em>bias-variance- trade-off</em>.This is referred to as a trade-off because it is easy to obtain a method with extremely low bias but high variance (for instance, by drawing a curve that passes through every single training observation) or a method with very low variance but high bias (by fitting a horizontal line to the data).</p>
+<p>As a general rule, as we use more <strong>flexible methods</strong>, the <strong>variance will increase</strong> and the <strong>bias will decrease</strong>. The relative rate of change of these two quantities determines whether the test MSE increases or decreases. The relationship between bias, variance, and test set MSE given in the above equation is referred to as the <em>bias-variance- trade-off</em>.This is referred to as a trade-off because it is easy to obtain a method with extremely low bias but high variance (for instance, by drawing a curve that passes through every single training observation) or a method with very low variance but high bias (by fitting a horizontal line to the data).</p>
 <p><strong>The classification setting</strong></p>
 <p>Many of the concepts we’ve seen in the regression setting, such as the bias-variance trade-off, transfer over to the classification setting with some modifications due to the fact that <span class="math inline">\(y_i\)</span> no longer is numerical. The most common approach for quantifying the accuracy of our estimate <span class="math inline">\(\hat{f}\)</span> is the training <em>error rate</em>, the proportion of mistakes that are made if we apply our estimate to the training observations.</p>
-<p><span class="math display">\[\frac{1}{n} \sum_{i=1}^n I(y_i \neq \hat{y}_i)\]</span> Where <span class="math inline">\(I(y_i \neq \hat{y}_i\)</span> is an <em>indicator variable</em> that equals 1 if they are not equal, and zero if they are. Hence the euqation computes the incorrect classifications.</p>
+<p><span class="math display">\[\frac{1}{n} \sum_{i=1}^n I(y_i \neq \hat{y}_i)\]</span> Where <span class="math inline">\(I(y_i \neq \hat{y}_i)\)</span> is an <em>indicator variable</em> that equals 1 if they are not equal, and zero if they are. Hence the equation computes the incorrect classifications.</p>
 <p>The <em>test error</em> rate associated with a set of test observations of the form <span class="math inline">\((x_0,y_0)\)</span> is given by</p>
 <p><span class="math display">\[Ave(I(y_0 \neq \hat{y_0}))\]</span></p>
 <p>Where <span class="math inline">\(\hat{y_0}\)</span> is the predicted class label that results from applying the classifier to the test observation with predictor <span class="math inline">\(x_0\)</span>. A <em>good</em> classifier is one for which the test error is smallest. It is possible to show that the test error rate is minimzed, on average, by a very simple classifier that <em>assigns each observation to the most likely class, given its predictor values.</em> In other words, we should ismply assign a test observation with predicctor vector <span class="math inline">\(x_0\)</span> to the class <span class="math inline">\(j\)</span> for which</p>
@@ -248,12 +249,12 @@ x</code></pre>
 <p>By default <em>rnorm()</em> creates standard normal random variables with a mean of 0 and a s.d. of 1, but these can be changed.</p>
 <pre class="r"><code>x = rnorm(5)
 x</code></pre>
-<pre><code>## [1] -0.39265638  1.17221896  0.80782379  0.04308242  0.33436420</code></pre>
+<pre><code>## [1] -0.8665964 -0.5567692  0.9890038  0.6709608 -0.4370573</code></pre>
 <pre class="r"><code>y = rnorm(5,mean=50,sd=.1)
 y</code></pre>
-<pre><code>## [1] 49.99952 50.11689 49.96397 49.95188 49.94544</code></pre>
+<pre><code>## [1] 50.06424 50.05678 49.87504 49.86761 49.96612</code></pre>
 <pre class="r"><code>cor(x,y)</code></pre>
-<pre><code>## [1] 0.551177</code></pre>
+<pre><code>## [1] -0.9425233</code></pre>
 <pre class="r"><code>set.seed(3)
 y=rnorm(100)
 mean(y)</code></pre>

@@ -31,7 +31,7 @@ Assume for a moment that both $\hat{f}$ and $X$ are fixed. Then
 
 $$E(Y-\hat{Y})^2 = E[f(x)+\epsilon - \hat{f}(X)]^2 = [f(X)-\hat{f}(X)]^2 + Var(\epsilon)$$
 
-Where the left side of the right part of the expression is the reducible part and the right side is the irreducible one, i.e. $Var(\epsilon) represents the *variance* associated with the error term $\epsilon$. 
+Where the left side of the right part of the expression is the reducible part and the right side is the irreducible one, i.e. $Var(\epsilon)$ represents the *variance* associated with the error term $\epsilon$. 
 
 $E(Y-\hat{Y})^2$ represents the average, or *expected value* of the squared difference between the predicted and actual value of $Y$. 
 
@@ -51,7 +51,7 @@ Depending on whether our ultimate goal is prediction, inference, or a combinatio
 
 Let $x_{ij}$ represent the value of the $j$th predictor, or input, for observation $i$, where $i = 1,2,...,n$ and $j = 1,2,...,p$. Let $y_i$ represent the response variable for the $i$th observation. Then our training data consists of ${(x_1,y_1),(x_2,y_2),...,(x_n,y_n)}$ where $x_i = (x_{i1},x_{i2},...,x_{ip})$.  Our goal is to apply a statistical learning method to the training data in order to estimate the unknown function $f$. Broadly speacking, most statistical learning methods for this task can be characterized as either *parametric* or *non-parametric*
 
-** Parametric methods**
+**Parametric methods**
 
 Parametric methods involve a two-step model-based approach:
 
@@ -71,7 +71,7 @@ Non-parametric methods do not make explicit assumptions about the functional for
 
 ### Assessing model accuracy
 
-** Measuring the quality of fit **
+**Measuring the quality of fit**
 
 In order to evaluate the performance of a statistical learning method on a given data set, we need some way to measure how well its predictions actually match the observed data. That is, we need to quantify the extent to which the predicted response value for a given observation is close to the true response value for that observation. In the regression setting, the most commonly-used measure is the *mean squared error* (MSE), given by
 
@@ -89,22 +89,24 @@ Though the mathematical proof is beyond the scope of this book, it is possible t
 
 $$E(y_0 - \hat{f}(x_0))^2 = Var(\hat{f}(x_0)) + Bias(\hat{f}(x_0))^2 + Var(\epsilon)$$
 
-This equation tells us that in order to minimize the expected test error, we need to select a statistical learning method that simultaneously achieves *low variance* and *low bias*. Not that variance and square bias are nonnegative quantities, hence the expected MSE can never lie below $Var(\epsilon)$, the irreducible error.
+This equation tells us that in order to minimize the expected test error, we need to select a statistical learning method that simultaneously achieves *low variance* and *low bias*. Note that variance and square bias are nonnegative quantities, hence the expected MSE can never lie below $Var(\epsilon)$, the irreducible error.
+
+Here the notation $E(y_0 - \hat{f}(x_0))^2$ defines the *expected test MSE*, and refers to the average test MSE that we would obtain if we repeatedly estimated $f$ using a large number of training sets, and tested each at $x_0$.
 
 What do we mean by the variance and bias of a statistical learning method?
 
-- Variance refers to the amount by which $\hat{f}$ would change if we estimated it using a different training data set.
+- **Variance** refers to the amount by which $\hat{f}$ would change if we estimated it using a different training data set.
 
-- Bias refers to the error that is introduced by approximating a real-life problem, which may be extremely complicated, by a much simpler model.
+- **Bias** refers to the error that is introduced by approximating a real-life problem, which may be extremely complicated, by a much simpler model.
 
-As a general rule, as we use more flexible methods, the variance will increase and the bias will decrease. The relative rate of change of these two quantities determines whether the test MSE increases or decreases. The relationship between bias, variance, and test set MSE given in the above equation is referred to as the *bias-variance- trade-off*.This is referred to as a trade-off because it is easy to obtain a method with extremely low bias but high variance (for instance, by drawing a curve that passes through every single training observation) or a method with very low variance but high bias (by fitting a horizontal line to the data).
+As a general rule, as we use more **flexible methods**, the **variance will increase** and the **bias will decrease**. The relative rate of change of these two quantities determines whether the test MSE increases or decreases. The relationship between bias, variance, and test set MSE given in the above equation is referred to as the *bias-variance- trade-off*.This is referred to as a trade-off because it is easy to obtain a method with extremely low bias but high variance (for instance, by drawing a curve that passes through every single training observation) or a method with very low variance but high bias (by fitting a horizontal line to the data).
 
 **The classification setting** 
 
 Many of the concepts we've seen in the regression setting, such as the bias-variance trade-off, transfer over to the classification setting with some modifications due to the fact that $y_i$ no longer is numerical. The most common approach for quantifying the accuracy of our estimate $\hat{f}$ is the training *error rate*, the proportion of mistakes that are made if we apply our estimate to the training observations.
 
 $$\frac{1}{n} \sum_{i=1}^n I(y_i \neq \hat{y}_i)$$
-Where $I(y_i \neq \hat{y}_i$ is an *indicator variable* that equals 1 if they are not equal, and zero if they are. Hence the euqation computes the incorrect classifications.
+Where $I(y_i \neq \hat{y}_i)$ is an *indicator variable* that equals 1 if they are not equal, and zero if they are. Hence the equation computes the incorrect classifications.
 
 The *test error* rate associated with a set of test observations of the form $(x_0,y_0)$ is given by
 

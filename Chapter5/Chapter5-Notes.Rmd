@@ -1,0 +1,86 @@
+---
+title: "Chapter 5 - Resampling Methods"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+Resampling methods involve repeatedly drawing samples from a training set and refitting a model of interest on each sample in order to obtain additional information about the fitted model. In this chapter, we discuss two of the most commonly used resampling methods, *cross-validation* and the *bootstrap*.
+
+Cross-validation can be used to estimate the test error associated with a given statistical learning method in order to evaluate its performance, or to select the appropriate level of flexibility. The process of evaluating a model's performance is known as *model assessment*, whereas the process of selecting the proper level of flexibility for a model is known as *model selection*.
+
+The bootstrap is used in several contexts, most commonly to provide a measure of accuracy of a parameter estimate or of a given statistical learning method.
+
+#Cross-Validation
+
+In the absence of a very large designated test set that can be used to directly estimate the test error rate, a number of techniques can be used to estimate this quantity using the available training data. Some methods make a mathematical adjustment to the training error rate in order to estimate the test error rate. In this section, we instead consider a class of methods that estimate the test error rate by holding out a subset of the training observations from the fitting process, and then applying the statistical learning method to those held out observations. 
+
+##The Validation Set Approach
+
+Suppose that we would like to estimate the test error associated with fitting a particular statistical learning method on a set of samples. The validation set approach is a very simple strategy for this task. It involves randomly dividing the available set of samples into two parts, a training set and a validation set or hold-out set. The model is fit on the training set, and the fitted  model is used to predict the responses for the observations in the validation set. The resulting validation set error rate — typically assessed using MSE in the case of a quantitative response — provides an estimate of the test error rate.
+
+The validation set approach is conceptually simple and is easy to implement. But it has two potential drawbacks:
+
+1. As is shown in the right-hand panel of Figure 5.2, the validation estimate of the test error rate can be highly variable, depending on pre- cisely which observations are included in the training set and which observations are included in the validation set.
+
+2. In the validation approach, only a subset of the observations — those that are included in the training set rather than in the validation set — are used to fit the model. Since statistical methods tend to perform worse when trained on fewer observations, this suggests that the validation set error rate may tend to overestimate the test error rate for the model fit on the entire data set.
+
+## Leave-One-Out Cross-Validation
+
+Like the validation set approach, LOOCV involves splitting the set of observations into two parts. However, instead of creating two subsets of comparable size, a single observation $(x_1,y_1)$ is used for the validation set, and the remaining observations make up the training set. The statistical learning method is fit on the $n-1$ training observations, and a prediction $\hat{y_1}$ is made for the excluded observation. Since $(x_1,y_1)$ was not used in the fitting process, $MSE_1 = (y_1 - \hat{y_1})^2 provides an approximately unbiased estimate for the test error, though we can't generalize this for the test error for the whole fitting procedure itself.
+
+However, we can repeat this procedure $n$ times by training the statistical learning procedure on the $n-1$ observations, producing $n$ squared errors. The LOOCV estiamte for the test MSE is the average of these $n$ test error estimates.
+
+$$CV_{(n)} = \frac{1}{n} \sum_{i=1}^n MSE_i$$
+
+LOOCV has a couple of major advantages over the validation set approach. First, it has far less bias. In LOOCV, we repeatedly fit the statistical learning method using training sets that contain $n-1$ observations, almost as many as are in the entire data set. This is in contrast to the validation set approach, in which the training set is typically around half the size of the original data set. Consequently, the LOOCV approach tends not to overestimate the test error rate as much as the validation set approach does. Second, in contrast to the validation approach which will yield different results when applied repeatedly due to randomness in the training/validation set splits, performing LOOCV multiple times will always yield the same results: there is no randomness in the training/validation set splits.
+
+LOOCV has the potential to be expensive to implement, since the model has to be fit n times. This can be very time consuming if n is large, and if each individual model is slow to fit. With least squares linear or polynomial regression, an amazing shortcut makes the cost of LOOCV the same as that of a single model fit! The following formula holds:
+
+$$CV_{(n)} = \frac{1}{n} \sum_{i=1}^n \left ( \frac{y_i - \hat{y_i}}{1-h_i} \right )^2$$
+
+where $h_i$ is the leverage. This is like the ordinary MSE, except the $i$th residual is divided by $1-h_i$. The leverage lies between 1/$n$ and 1, and reflects the amount that an observation influences its own fit. Hence the residuals for high-leverage points are inflated in this formula by exactly the right amount for this equality to hold.
+
+LOOCV is a very general method, and can be used with any kind of predictive modeling. For example we could use it with logistic regression or linear discriminant analysis, or any of the methods discussed in later chapters. The magic formula does not hold in general, in which case the model has to be refit $n$ times.
+
+## k-Fold Cross-Validation
+
+This approach involves randomly dividing the set of observations into $k$ groups, or *folds* of approximately equal size. The first fold is treated as a validation set, and the method is fit on the remaining $k-1$ folds. The MSE is then computed on the observations in the held-out fold. This procedure is repeated $k$ times; each time, a different group of observations is treated as a validation set. This process results in *k* estimates of the test error. The k-fold CV estimate is computed by averaging these values
+
+$$CV_{(k)} = \frac{1}{k} \sum^k_{i=1} MSE_i $$
+
+The LOOCV is a special case of this method where $k=n$. In practice, ine typically performs k-fold CV using $k=5$ or $k=10$ because of computational concerns and non-computational concerns involving the bias-variance trade-off.
+
+When we perform cross-validation, our goal might be to determine how well a given statistical learning procedure can be expected to perform on independent data; in this case, the actual estimate of the test MSE is of interest. But at other times we are interested only in the location of the minimum point in the estimated test MSE curve. This is because we might be performing cross-validation on a number of statistical learning methods, or on a single method using different levels of flexibility, in order to identify the method that results in the lowest test error. For this purpose, the location of the minimum point in the estimated test MSE curve is important, but the actual value of the estimated test MSE is not.
+
+## Bias-Variance Trade-Off for k-Fold Cross-Validation
+
+Putting computational issues aside, a less obvious but potentially more important advantage of k-fold CV is that it often gives more accurate estimates of the test error rate than does LOOCV. This has to do with a bias-variance trade-off.
+
+The validation set approach can lead to overestimates of the test error rate, since in this approach the training set used to fit the statistical learning method contains only half the observations of the entire data set. Using this logic, it is not hard to see that LOOCV will give approximately unbiased estimates of the test error, since each training set contains $n-1$ observations, which is almost as many as the number of observations in the full data set. Performing k-fold CV with $k=5$ or $k=10$ will lead to an intermediate level of bias since each training set contains $(k-1)n/k$ observations - fewer than in the LOOCV approach, but more than in the validation set approach. Therefore, from the perspective of bias reduction, it is clear that the LOOCV approach is preferred to k-fold CV.
+
+However, we know that there's a trade-off between bias and variance, and it turns out that LOOCV has higher variance than does k-fold CV with $k<n$. Since the mean of many highly correlated quantities has higher variance than does the mean of many quantities that are not as highly correlated, the test error estimate resulting from LOOCV tends to have higher variance than does the test error estimate resulting from k-fold CV.
+
+To summarize, there is a bias-variance trade-off associated with the choice of k in k-fold cross-validation. Typically, given these considerations, one performs k-fold cross-validation using k = 5 or k = 10, as these values have been shown empirically to yield test error rate estimates that suffer neither from excessively high bias nor from very high variance.
+
+## Cross-Validation on Classification Problems
+
+In this setting, cross-validation works just as described earlier in this chapter, except that rather than using MSE to quantify test error, we instead use the the number of misclassified observations. For instance, in the classification setting, the LOOCV error rate takes the form
+
+$$CV_{(n)} = \frac{1}{n} \sum^n_{i=1} Err_i $$
+where $Err_i = I(y_i \neq \hat{y_i})$.
+
+
+# The Bootstrap
+
+The *bootstrap* is a widely applicable and extremely powerful statistical tool that can be used to quantify the uncertainty associated with a given estimator or statistical learning method. As a simple example, the bootstrap can be used to estimate the standard errors of the coefficients from a linear regression fit. In the specific case of linear regression, this is not particularly useful, since we saw in Chapter 3 that standard statistical software such as R outputs such standard errors automatically. However, the power of the bootstrap lies in the fact that it can be easily applied to a wide range of statistical learning methods, including some for which a measure of vari- ability is otherwise difficult to obtain and is not automatically output by statistical software. 
+
+the bootstrap approach allows us to use a computer to emulate the process of obtaining new sample sets, so that we can estimate the variability of $\hat{\alpha}$ without generating additional samples. Rather than repeatedly obtaining independent data sets from the population, we instead obtain distinct data sets by repeatedly sample observations **from the original data set**. 
+
+We randomly select $n$ observations from the data set in order to produce a bootstrap data set, $Z^{*1}$. The sampling is performed with *replacement*, which means that the same observation can occur more than once in the bootstrap data set. We can use $Z^{*1}$ to produce a new bootstrap estimate for $\alpha$, which we call $\hat{\alpha^{*1}}$, This procedure is repeated $B$ times for some large value of $B$, in order to produce $B$ different bootstrap data sets, $Z^{*1},Z^{*2},...Z^{*B}$, and their corresponding $\alpha$ estimates. We can compute the standard error of these bootstrap esstimates using the formula
+
+$$SE_{B}(\hat{\alpha}) = \sqrt{\frac{1}{B-1} \sum^B_{r=1} \left(  \hat{\alpha}^{*r} - \frac{1}{B} \sum^B_{r'=1} \hat{\alpha}^{*r'} \right )^2}$$
+
+This serves as an estimate of the standard error of $\hat{\alpha}$ estiamted from the original data set.
+
+# Lab: Cross-Validation and the Bootstrap

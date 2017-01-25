@@ -1,0 +1,102 @@
+---
+title: "Chapter 2 - Statistical Learning, Exercises"
+output:
+  html_document: default
+  html_notebook: default
+---
+#Exercise 8
+```{r}
+#a)
+college = read.csv("College.csv", header=T,na.strings="?")
+```
+
+```{r}
+#b)
+rownames(college)=college[,1]
+fix(college)
+college=college[,-1]
+fix(college)
+```
+
+```{r}
+#c)
+#.i
+summary(college)
+#.ii
+pairs(college[,1:10])
+#.iii
+plot(college$Private,college$Outstate)
+#.iv
+Elite=rep("No",nrow(college))
+Elite[college$Top10perc>50]="Yes"
+Elite=as.factor(Elite)
+college=data.frame(college,Elite)
+summary(college)
+plot(college$Elite,college$Outstate)
+#.v & .vi
+par(mfrow=c(2,2))
+hist(college$Accept,breaks=100)
+hist(college$Room.Board,breaks=50)
+hist(college$Books,breaks=50)
+hist(college$PhD,breaks=50)
+```
+
+#Exercise 9
+```{r}
+auto = read.csv("Auto.csv", header=T,na.strings="?")
+auto = na.omit(auto)
+```
+
+```{r}
+# (a)
+# quantitative: mpg, cylinders, displacement, horsepower, weight, acceleration, year
+# qualitative: name, origin
+```
+
+```{r}
+#b)
+sapply(auto[,1:7], range) #applies range() to the 7 first rows of auto
+```
+```{r}
+#c)
+sapply(auto[,1:7], mean)
+sapply(auto[,1:7], sd)
+```
+```{r}
+#d)
+auto1=auto[-(10:85),]
+sapply(auto1[,1:7], range) 
+sapply(auto1[,1:7], mean)
+sapply(auto1[,1:7], sd)
+```
+
+```{r}
+#e)
+pairs(auto)
+plot(auto$displacement,auto$horsepower)
+hist(auto$cylinders, breaks=2)
+```
+```{r}
+#f)
+plot(auto$mpg,auto$weight)
+plot(auto$mpg,auto$acceleration)
+```
+
+#Exercise 10
+```{r}
+#a)
+library(MASS)
+print(Boston)
+?Boston
+dim(Boston)
+summary(Boston)
+```
+```{r}
+#b)
+pairs(Boston)
+plot(Boston$crim,Boston$dis)
+plot(Boston$black,Boston$crim)
+plot(Boston$ptratio,Boston$crim)
+```
+
+Don't really see the need to do more. Calling this done.

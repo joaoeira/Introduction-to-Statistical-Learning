@@ -1,0 +1,294 @@
+---
+title: "Chapter 3 - Linear Regression"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+**8**
+
+```{r}
+library("ISLR")
+attach(Auto)
+```
+
+```{r}
+#a)
+lm.fit <- lm(mpg~horsepower)
+summary(lm.fit)
+```
+
+i) There does seem to be a relationship between horsepower and miles per galon, a negative one.
+ii) The relationship is strong, being significant at every significance level
+iii) The relationship is negative, with more horsepower being related to lower miles per gallon
+iv) 
+
+```{r}
+predict(lm.fit,data.frame(horsepower=98), interval = "confidence")
+predict(lm.fit,data.frame(horsepower=98), interval = "prediction")
+```
+
+```{r}
+#b)
+par(mfrow=c(1,1))
+plot(horsepower,mpg)
+abline(lm.fit, lwd=1) #protip: abline plots ON TOP of another plot, you can't just call abline 
+```
+
+```{r}
+#c)
+par(mfrow=c(2,2))
+plot(lm.fit)
+
+lm.fit1 <- lm(mpg~I(log(horsepower)))
+par(mfrow=c(1,1))
+plot(log(horsepower),mpg)
+abline(lm.fit1)
+par(mfrow=c(2,2))
+plot(lm.fit1)
+
+#the residuals seem to follow less of a pattern when its log(horsepower)
+#the fit also seems much better
+```
+
+**9**
+
+```{r}
+rm(list=ls())
+attach(Auto)
+?Auto
+```
+
+```{r}
+#a)
+pairs(Auto)
+```
+```{r}
+#b)
+cor(Auto[-9])
+```
+```{r}
+#c)
+lm.fit <- lm(mpg~.-name, data=Auto)
+summary(lm.fit)
+#i) and ii)
+#there is for some of them: the intercept,displacement, weight,year and origin
+#iii)
+#the year coefficient suggests that as time has passed mpg has increased
+#meaning that manufacturers have been improving their engines so that 
+#miles per gallon has increased, i.e. better efficiency
+```
+
+```{r}
+#d)
+par(mfrow=c(2,2))
+plot(lm.fit)
+#there are some outliers, considering the leverage 
+par(mfrow=c(1,1))
+plot(hatvalues(lm.fit))
+which.max(hatvalues(lm.fit)) #14
+```
+
+```{r}
+#e)
+lm.fit1 <- lm(mpg~.-name +year*horsepower, data=Auto)
+summary(lm.fit1)
+par(mfrow=c(2,2))
+plot(lm.fit1)
+#some heteroscedasticity I think
+
+lm.fit1 <- lm(mpg~.-name +horsepower*displacement, data=Auto)
+summary(lm.fit1)
+par(mfrow=c(2,2))
+plot(lm.fit1)
+#why does suddenly everything seem to be somewhat significant except the intercept?
+
+
+lm.fit1 <- lm(mpg~.-name +horsepower*acceleration, data=Auto)
+summary(lm.fit1)
+par(mfrow=c(2,2))
+plot(lm.fit1)
+```
+
+
+```{r}
+
+lm.fit2<-lm(log(mpg)~.-name, data=Auto)
+summary(lm.fit2)
+plot(lm.fit2)#less of a pattern in the residuals
+
+lm.fit3<-lm(log(mpg)~.-name -horsepower -displacement -acceleration -cylinders, data=Auto)
+summary(lm.fit3)
+plot(lm.fit3)
+#doesnt lose much in terms of R2 and plots seem much better
+
+lm.fit4<-lm(I(mpg^2)~.-name -horsepower -displacement -acceleration -cylinders, data=Auto)
+summary(lm.fit4)
+plot(lm.fit4)
+#worse, and some error "operator is invalid for atomic vectors"
+```
+
+**10**
+```{r}
+rm(list=ls())
+attach(Carseats)
+?Carseats
+```
+
+```{r}
+#a)
+lm.fit=lm(Sales~Population+Urban+US)
+summary(lm.fit)
+#b)
+#sales do better in the US? also, sales would still exist even if not in the US (no population???)
+```
+
+c)
+$$\beta_2 x_1 + \beta_3 x_2 & \text{if the store is in the US and is urban}\\ 
+\beta_2 x_1 & \text{if the store is in the US but not urban }\\ 
+\beta_3 x_2 & \text{if the store is not in the US but is urban}\\
+0 & \text{if not in the US nor urban}
+\end{matrix}\right.$$
+
+d)
+I can reject the null hypothesis for the US predictor and the Intercept
+
+```{r}
+#e)
+lm.fit1=lm(Sales~US)
+summary(lm.fit1)
+#f) not very well, R2 ~0.03
+```
+
+```{r}
+#g)
+confint(lm.fit1,level=0.95)
+```
+
+```{r}
+#h)
+plot(hatvalues(lm.fit))
+#No? doesnt seem like there is
+```
+
+**11**
+
+```{r}
+rm(list=ls())
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x+rnorm(100)
+```
+
+```{r}
+#a)
+lm.fit <- lm(y~x+0)
+summary(lm.fit)
+plot(lm.fit)
+```
+
+```{r}
+#b)
+lm.fit <- lm(x~y+0)
+summary(lm.fit)
+plot(lm.fit)
+
+#c) boring
+#d) see notes
+
+```
+
+**12**
+
+```{r}
+rm(list=ls())
+par(mfrow=c(1,1))
+```
+
+```{r}
+#a) beta = 1
+#b)
+x <- c(1:100)
+y<-seq(0.5,50,by =0.5)
+lm.fit<-lm(x~y+0)
+summary(lm.fit)
+lm.fit1<-lm(y~x+0)
+summary(lm.fit1)
+```
+
+```{r}
+#c)
+x<-c(1:100)
+y<-x
+lm.fit<-lm(x~y+0)
+summary(lm.fit)
+lm.fit1<-lm(y~x+0)
+summary(lm.fit1)
+```
+
+**13**
+```{r}
+rm(list=ls())
+```
+
+```{r}
+#a)
+x<-rnorm(100,mean=0,sd=1)
+#b) 
+eps<-rnorm(100,mean=0,sd=0.25)
+#c)
+y<--1+0.5*x+eps
+length(y)
+#beta0 = -1
+#beta1 = 0.5
+#d)
+plot(x,y)
+#e)
+lm.fit<-lm(y~x)
+summary(lm.fit)
+abline(lm.fit,lwd=3,col="blue")
+#because of n=100, if n=infty would be the same
+
+#f)
+curve(-1+0.5*x,add=TRUE,col="red",lwd=3)
+legend(0.7,-1, c("Population","Regression"), lty=c(1,1),lwd=c(2.5,2.5),col=c("red","blue"))
+
+#g)
+lm.fit1<-lm(y~x+I(x^2))
+summary(lm.fit1)
+#not significant
+
+#h)
+#less noise allows for "truer" fit using less observations
+#i)
+#)more noise needs more observations to reach a good fit
+```
+
+**14**
+```{r}
+rm(list=ls())
+#a)
+set.seed(1)
+x1=runif(100)
+x2=0.5*x1*rnorm(100)/10
+y=2+2*x1+0.3*x2+rnorm(100)
+#b)
+cor(x1,x2)
+plot(x1,x2)
+#c)
+lm.fit<-lm(y~x1+x2)
+summary(lm.fit)
+par(mfrow=c(2,2))
+plot(lm.fit)
+#d)
+lm.fit<-lm(y~x1)
+summary(lm.fit)
+#d)
+lm.fit<-lm(y~x2)
+summary(lm.fit)
+```
+
+
+
+
+

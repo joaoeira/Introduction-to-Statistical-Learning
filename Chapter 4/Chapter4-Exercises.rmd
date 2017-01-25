@@ -1,0 +1,374 @@
+---
+title: "Chapter 4 - Classification"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r}
+library(ISLR)
+```
+
+**10**
+
+```{r}
+attach(Weekly)
+?Weekly
+summary(Weekly)
+pairs(Weekly)
+```
+
+```{r}
+plot(Year,Volume)
+```
+
+```{r}
+#b)
+glm.fit<-glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Weekly,family=binomial)
+summary(glm.fit)
+#Lag2 is significant at a 1% significant level
+```
+
+```{r}
+#c)
+glm.probs<-predict(glm.fit,type="response")
+glm.pred<-rep("Down",1089)
+glm.pred[glm.probs>.5]<-"Up"
+table(glm.pred,Direction)
+(557+54)/1089 #0.561 correct overall prediction
+557/(48+557) #0.920 correct prediction for UP
+54/(54+430) #0.111 correct prediction for DOWN
+#so logistic regression doesnt predict down very well
+```
+
+```{r}
+#d
+train<-(Year < 2009)
+train.Year=Year[train]
+Weekly.2008=Weekly[!train,]
+test.Direction=Direction[!train]
+glm.fit=glm(Direction~Lag2,data=Weekly,family=binomial,subset=train)
+summary(glm.fit)
+```
+```{r}
+glm.probs<-predict(glm.fit,Weekly.2008,type="response")
+glm.pred<-rep("Down",1025-985)
+glm.pred[glm.probs>.5]<-"Up"
+table(glm.pred,test.Direction)
+```
+
+```{r}
+56/(56+3) #better for up
+4/38  #worse for down
+```
+
+```{r}
+#e)
+library(MASS)
+lda.fit<-lda(Direction~Lag2, data = Weekly,subset=train)
+lda.fit
+```
+
+```{r}
+plot(lda.fit)
+```
+
+```{r}
+lda.pred<-predict(lda.fit,Weekly.2008)
+lda.class<-lda.pred$class
+table(lda.class,test.Direction)
+```
+
+```{r}
+56/(56+6) #0.903
+9/(9+34) #0.209
+```
+
+```{r}
+#f)
+qda.fit<-qda(Direction~Lag2,data=Weekly,subset=train)
+qda.fit
+```
+
+```{r}
+qda.class <-predict(qda.fit,Weekly.2008)$class
+table(qda.class,test.Direction)
+```
+
+Well that's dumb
+
+```{r}
+library(class)
+train.X=cbind(Lag2)[train,]
+test.X=cbind(Lag2)[!train,]
+train.Direction=Direction[train]
+```
+
+```{r}
+set.seed(1)
+knn.pred<-knn(data.frame(train.X),data.frame(test.X),train.Direction,k=1)
+table(knn.pred,test.Direction)
+```
+
+```{r}
+31/(61) #0.509
+22/43 #0.511
+(31+21)/(31+21+30+22) #meh, by chance 
+```
+
+```{r}
+#i)
+#i might do this later, i get it
+```
+
+**11**
+
+```{r}
+rm(list=ls())
+attach(Auto)
+summary(Auto)
+```
+```{r}
+#a)
+mpg01<-rep(0,length(mpg))
+mpg01[mpg>mean(mpg)]=1
+```
+
+```{r}
+#b
+pairs(Auto)
+for(i in 2:8){
+  plot(Auto[,i],mpg01,xlab=names(Auto)[i])
+}
+#the weight one is pretty interesting
+#mpg below average as weight increases
+#nice
+#same for horsepowe
+#above average mpg is usually in the low displacement cars
+#pretty cool actually
+```
+
+```{r}
+#c)
+dim(Auto)
+train<-(year<81)
+train.Auto=Auto[train,]
+dim(train.Auto)
+test.mpg01<-mpg01[!train]
+```
+```{r}
+#d)
+cor(Auto[-9]) #wondering if I drop out 1 variable highly correlated with another we will lose much prediction performance
+#intuition says no
+lda.fit<-lda(mpg01~displacement+horsepower+weight+acceleration,subset = train)
+lda.fit
+plot(lda.fit)
+lda.pred<-predict(lda.fit,Auto[!train,])
+lda.class<-lda.pred$class
+table(lda.class,test.mpg01)
+mean(lda.class==test.mpg01)
+```
+```{r}
+#weight has high correlation with displacement and horsepower so lets drop it
+lda.fit<-lda(mpg01~displacement+horsepower+acceleration,subset = train)
+lda.fit
+plot(lda.fit)
+lda.pred<-predict(lda.fit,Auto[!train,])
+lda.class<-lda.pred$class
+table(lda.class,test.mpg01)
+mean(lda.class==test.mpg01)
+```
+
+Hey that's better!
+
+```{r}
+#interestingly, we get the same if we remove either horsepower or acceleration
+lda.fit<-lda(mpg01~displacement+acceleration,subset = train)
+lda.fit
+plot(lda.fit)
+lda.pred<-predict(lda.fit,Auto[!train,])
+lda.class<-lda.pred$class
+table(lda.class,test.mpg01)
+mean(lda.class==test.mpg01)
+```
+
+```{r}
+
+#displacement alone seems to do it?
+lda.fit<-lda(mpg01~displacement,subset = train)
+lda.fit
+plot(lda.fit)
+lda.pred<-predict(lda.fit,Auto[!train,])
+lda.class<-lda.pred$class
+table(lda.class,test.mpg01)
+mean(lda.class==test.mpg01)
+#cool, guess the -0.54 correlation between displacement and acceleration is strong enough for acceleration to not add much in predictive power
+```
+
+```{r}
+glm.fit<-glm(mpg01~displacement,data=Auto,family=binomial,subset = train)
+summary(glm.fit)
+glm.probs<-predict(glm.fit,Auto[!train,],type="response")
+glm.pred=rep(0,58)
+glm.pred[glm.probs>.5]=1
+table(glm.pred,test.mpg01)
+mean(glm.pred==test.mpg01)
+```
+```{r}
+#lets add all previous predictors to the logistic regression for fun (remove weight because correlation though)
+glm.fit<-glm(mpg01~displacement+horsepower+acceleration,data=Auto,family=binomial,subset = train)
+summary(glm.fit)
+glm.probs<-predict(glm.fit,Auto[!train,],type="response")
+glm.pred=rep(0,58)
+glm.pred[glm.probs>.5]=1
+table(glm.pred,test.mpg01)
+```
+
+Does better than previously but worse than LDA. 
+
+```{r}
+#g)
+library(class)
+train.x=cbind(displacement,weight,acceleration,horsepower)[train,]
+test.x=cbind(displacement,weight,acceleration,horsepower)[!train,]
+train.mpg01=mpg01[train]
+set.seed(1)
+knn.pred=knn(train.x,test.x,train.mpg01,k=3)
+table(knn.pred,test.mpg01)
+mean(knn.pred==test.mpg01)
+```
+
+**12**
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+#a)
+Power <- function(x){
+  print(2^3)
+}
+```
+
+```{r}
+#b)
+Power2 <- function(x,a){
+  print(x^a)
+}
+#c)
+Power2(10,3)
+Power2(8,17)
+Power2(131,3)
+```
+```{r}
+#d)
+Power3 <- function(x,a){
+  return(x^a)
+}
+```
+
+```{r}
+#e)
+xaxis <- c(1:10)
+yaxis <- c(Power3(c(1:10),2))
+plot(xaxis,yaxis)
+```
+
+```{r}
+#f)
+PlotPower <- function(x,a){
+  plot(x,c(Power3(x,2)))
+}
+PlotPower(1:10,3)
+```
+
+```{r}
+rm(list=ls())
+```
+
+**13**
+
+```{r}
+attach(Boston)
+summary(Boston)
+?Boston
+cor(Boston)
+mean(crim)
+crim01<-rep(0,length(crim))
+crim01[crim>mean(mpg)] =1
+```
+
+```{r}
+for(i in 2:14){
+  plot(Boston[,i],crim01,xlab=names(Boston)[i])
+}
+#rm,age,dis,tax,black,medv
+```
+```{r}
+#training data
+data.n = 400
+train=1:data.n
+train.Boston=Boston[train,]
+test.crim01 = crim01[-train]
+```
+
+```{r}
+#logistic
+glm.fit<-glm(crim01~rm+age+dis+tax+black+medv, data=Boston,subset=train)
+summary(glm.fit) #some are not statistically significant but ill remove them later to see if it actually matters
+glm.probs <- predict(glm.fit,Boston[!train,],type="response")
+glm.pred=rep(0,length(crim01)-data.n)
+glm.pred[glm.probs>.5] = 1
+table(glm.pred,test.crim01)
+```
+
+```{r}
+glm.fit<-glm(crim01~rm+tax+black+medv, data=Boston,subset=train)
+summary(glm.fit)
+glm.probs <- predict(glm.fit,Boston[!train,],type="response")
+glm.pred=rep(0,length(crim01)-data.n)
+glm.pred[glm.probs>.5] = 1
+table(glm.pred,test.crim01)
+mean(glm.pred==test.crim01)
+```
+
+seems to say always 0
+
+```{r}
+#lda
+lda.fit <-lda(crim01~rm+tax+black+medv,data=Boston,subset=train)
+plot(lda.fit)
+lda.fit
+lda.pred <- predict(lda.fit,Boston[-train,])
+lda.class <-lda.pred$class
+table(lda.class,test.crim01)
+mean(lda.class==test.crim01)
+```
+
+```{r}
+#qda
+#too few observations for qda? if I have more for the train dataset then there will be none to the test...
+data.n = 350
+train=1:data.n
+train.Boston=Boston[train,]
+test.crim01 = crim01[-train]
+qda.fit <- qda(crim01~rm+tax+black+medv, data=Boston,subset=train)
+qda.class<-predict(qda.fit,Boston[-train,])$class
+table(qda.class,test.crim01)
+mean(qda.class==test.crim01)
+```
+
+```{r}
+#knn
+data.n = 350
+train=1:data.n
+train.Boston=Boston[train,]
+test.crim01 = crim01[-train]
+train.x=cbind(rm,tax,black,medv)[train,]
+test.x=cbind(rm,tax,black,medv)[-train,]
+knn.pred<-knn(train.x,test.x,crim01[train],k=3)
+table(knn.pred,test.crim01)
+mean(knn.pred==test.crim01)
+```
+

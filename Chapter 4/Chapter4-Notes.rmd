@@ -1,0 +1,308 @@
+---
+title: "Chapter 4 - Classification"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+In this chapter we study approaches for prediction qualitative responses, a process that is known as *classification*. We will discuss three of the most widely-used classifiers: *logistic regression*, *linear discriminant analysis*, and *K-nearest neighbors*. 
+
+# Logistic Regression
+
+Instead of modeling the response $Y$ directly, logistic regression models the *probability* that $Y$ belongs to a particular category. For example, in the *Default* data, logistic regression models the probability of default. For example, the probability of default given *balance* can be written as:
+
+$$Pr(default = Yes | balance)$$
+
+The values will range between 0 and 1. Then for any given value of *balance*, a prediction can be made for *default*. For example, one might predict *default = Yes* for any individual for whom $p(balance)>0.5$, or whatever value we want to choose based on how conservative or not we want to be.
+
+## The Logistic Model
+
+Linear regression with binary reponse coded as 0 or 1 will give results wherein the probability may be above 1 or below 0, which is non-sensical. Therefore we wish to use a function that gives outputs that lie in the $[0,1]$ range for all values of $X$. In logistic regression we use the *logistic function*:
+
+$$p(X)=\frac{e^{\beta_0 + \beta_1 X}}{1 + e^{\beta_0+\beta_1 X}}$$
+
+```{r}
+curve(1/(1+exp(-x)),from=-4, to=4)
+```
+
+To fit this model we use a method called *maximum likelihood*. After a bit of manipulation we find that
+
+$$\frac{p(X)}{1-p(X)} = e^{\beta_0 + \beta_1 X}$$
+
+The quantity $\frac{p(X)}{1-p(X)}$ is called the *odds* and can take on any value between 0 and $\infty$. Values of the odds close to 0 and $\infty$ indicate very low and very high probabilities of default, respectively. For example, on average 1 in 5 people with an odds of 1/4 will default, since $p(X) = 0.2$ implies an odds of $\frac{0.2}{1-0.2} = 1/4$. Odds are traditionally used instead of probabilities in horse-racing, since they relate more naturally to the correct betting strategy.
+
+By taking the logarithm of both sides we arrive at:
+
+$$log(\frac{p(X)}{1-p(X)} = \beta_0 + \beta_1 X$$
+
+The left-hand side is called the *log-odds* or *logit*. We see that the logistic regression model has a logit that is linear in $X$. 
+
+Recall that in a linear regression model, $\beta_1$ gives the average change in $Y$ associated with a one-unit increase in $X$. In contrast, in a logistic regression model,increasing X by one unit changes the log odds by $\beta_1$, or equivalently it multiplies the odds by $e^{\beta_1}$. Because the relationship between $p(X)$ and $X$ is not a straight line, $\beta_1$ does *not* correspond to the change in $p(X)$ associated with a one-unit increase in $X$. The amount that $p(X)$ changes due to a one-unit change in $X$ will depend on its current value. Regardless, a positive $\beta_1$ will imply that increasing $X$ will increase $p(X)$, and a negative $\beta_$ will imply that increasing $X$ will decrease $p(X)$.
+
+## Estimating the Regression Coefficients
+
+The basic intuition behind using maximum likelihood to fit a logistic regression model is as follows: we seek estimates for $\beta_0$ and $\beta_1$ such that the predicted probability $\hat{p}(x_i)$ of default for each individual, using the logistic function, corresponds as closely as possible to the individual's observed default status. In other words, we try to find $\hat{\beta_0}$ and $\hat{\beta_1}$ such that plugging these estimates into the model for $p(X)$, given by the logistic function$, yields a number close to one for all individuals who defaulted and close to 0 for all those who did not. This intuition can be formalized using a mathematical equation called a *likelihood function*:
+
+$$l(\beta_0,\beta) = \prod_{i:y_i=1}p(x_i)= \prod_{i':y_i'=0} (1-p(x_i'))$$
+
+The estimates for the coefficients are chosen to maximize this function.
+
+Let's say that in the **Default** data we get a coefficient $\beta_1$ for the **balance** that is equal to 0.0055. Straight away we can conclude that an increase in **balance** is associated with an increase probability of default. Moreover, a one-unit increase in **balance** is associated with an increase in the log odds of **default** by 0.0055 units.
+
+Many aspects of the logistic regression output are similar to the linear regression output of Chapter 3. We can measure the accuracy of the coefficient estimates by computing their standard errors. The z-statistic plays the same role as the t-statistic. For instance, the z-statistic associated with $\beta_1$ is equal to $\hat{\beta_1}/SE(\hat{\beta_1})$, and so a large (absolute) value indicates evidence against the null hypothesis $H_0 : \beta_1 = 0$. This null hypothesis implies that the probability of default does not depend on **balance**. The estaimted intercept is typically not of interest; its main purpose is to adjust the average fitted probabilities to the proportion of ones in the data.
+
+## Making Predictions
+
+Once the coefficients have been esstimated, it is a simple matter to compute the probability of **default** by substituting the coefficients back into the logistic function and compute the probability for any given credit card balance.
+
+One can use qualitative predictors with the logistic regression model using the dummy variable approach from before. 
+
+$$\hat{Pr}(default=Yes|student=Yes)=\frac{e^{-3.5041+0.4049 \times 1}}{1+e^{-3.5041 + 0.4049 \times 1}} = 0.0431$$
+
+$$\hat{Pr}(default=Yes|student=No)=\frac{e^{-3.5041+0.4049 \times 0}}{1+e^{-3.5041 + 0.4049 \times 0}} = 0.0292$$
+
+## Multiple Logistic Regression
+
+We can generalize the log odds equation for $p$ predictors:
+
+$$log(\frac{p(X)}{1-p(X)})=\beta_0 + \beta_1 X_1 + ... + \beta_+ X_p$$
+
+The corresponding logistic function is then written as
+
+$$p(X)=\frac{e^{\beta_0 + \beta_1 X_1 + ... + \beta_p X_p}}{1+e^{\beta_0+\beta_1 X_1+...+ \beta_p X_p}}$$
+
+Notice that by including more predictors you may get different coefficient predictions were you to do a single logistic regression on that predictor. This is because when you include more predictors you might uncover that there is a correlation between predictors that wasn't previously taken into account. This is generally known as *confounding*.
+
+
+# Linear Discriminant Analysis
+
+Logistic regression involves directly modeling $Pr(Y=k|X=x)$ using the logistic function for the case of two response classes. In statistical jargon, we model the conditional distribution of the response $Y$, given the predictor(s) $X$. We now consider an alternative and less direct approach to estimating these probabilities. In this alternative approach, we model the distribution of the predictors $X$ separately in each of the response classes (i.e. given $Y$), and then use Bayes' theorem to flip these around into estimates for $Pr(Y=k|X=x)$. When these distributions are assumed to be normal, it turns out that the model is very similar in form to logistic regression.
+
+There are several reasons to use this model versus logistic regression:
+
+1- When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
+
+2- When $n$ is small and the distribution of the predictors $X$ is approximately normal in each of the classes, the linear distriminant model is again more stable than the logistic regression model
+
+3- Linear discriminant analysis is more popular when we have more than two response classes.
+
+## Using Bayes' Theorem for Classification
+
+Suppose that we wish to classify an observation into one of $K$ classes, where $K\geq 2$. Let $\pi_k$ represent the overall or *prior* probability that a randomly chosen observation comes from the $k$th class; this is the probability that a given observation is associated with the $k$th category of the response variable $Y$. Let $f_k(X) \equiv Pr(X=x|Y=k)$ denote the *density function* of $X$ for an observation that comes from the $k$th class. In other words, $f_k(x)$ is relatively large if there is a high probability that an observation in the $k$th class has $X \approx x$, and is small if it is very unlikely that an observation in the $k$th class has $X \approx x$. Then *Bayes' theorem* states that
+
+$$Pr(Y=k|X=x)= \frac{\pi_k f_k(x)}{\sum^K_{l=1} \pi_l f_l(x)}$$
+
+This suggests that instead of directly computing $p_k(X)$, we can simply plug in estaimtes of $\pi_k$ and $f_k(X)$. In general, the former is easy if we have a random sample of $Y$s from the population: we simply compute the fraction of the training observations that belong to the $k$th class. However, estimating $f_k(X)$ tends to be more challenging, unless we assume some simple forms for these densities. 
+
+We refer to $p_k(x)$ as the *posterior* probability that an observation $X=x$ belongs to the $k$th class. THat is, it is the probability that the observation belongs to the $k$th class, *given* the predictor value for that observation. 
+
+## Linear Discriminant Analysis for p = 1
+
+Let's study the case where we have a single predictor. We would like to obtain an estimate for $f_k(x)$ so that we can estimate $p_k(x)$. We will then classify an observation to the class for which $p_k(x)$ is greatest. In order to estimate $f_k$ we will have to make some assumptions about its form.
+
+Suppose we assume that $f_k$ is *normalP. In the one-dimensional setting, the normal density takes the form:
+
+$$f_k(x) = \frac{1}{\sqrt{2 \pi}\sigma_k} exp(-\frac{1}{2 \sigma_k^2}(x - \mu_k)^2)$$
+
+where $\mu_k$ and $\sigma_k^2$ are the mean and variance parameters for the $k$th class. For now let us further assume that $\sigma^2_1 = ... = \sigma^2_k = \sigma^2$. Plugging this to the expression for $p_k(x)$ we find that:
+
+$$\frac{\pi_k \frac{1}{\sqrt{2 \pi}\sigma} exp(-\frac{1}{2 \sigma^2}(x - \mu_k)^2)}{\sum_{l=1}^K \pi_l \frac{1}{\sqrt{2 \pi}\sigma} exp(-\frac{1}{2 \sigma^2}(x - \mu_l)^2)}$$
+
+The Bayes classifier involves assigning an observation $X=x$ to the class for which this equation is largest. Taking its log and rearranging the terms we can show that this is equivalent to assigning the observation to the class for which
+
+$$\delta_k(x) = \x \cdot \frac{\mu_k}{\sigma^2}-\frac{\mu_k^2}{2\sigma^2} + log(\pi_k)$$
+
+is largest. For instance, if $K=2$ and $\pi_1 = \pi_2$, then the Bayes classifier assigns an observation to class 1 if $2x(\mu_1 - \mu_2) > \mu_1^2 - \mu_2^2$, and to class 2 otherwise. In this case, the Bayes decision boundary corresponds to the point where 
+
+$$x=\frac{\mu_1^2 - \mu_2^2}{2(\mu_1 - \mu_2)} = \frac{\mu_1 + \mu_2}{2}$$
+
+In practice, even knowing the prior distribution, we still need to estimate the parameters. The *linear discriminant analysis* (LDA) method approximates the Bayes classifier by plugging estimates for $\pi_k$,$\mu_k$, and $\sigma^2$ into $\delta_k$. In particular, the following estimates are used:
+
+$$\hat{\mu_k} = \frac{1}{n_k} \sum_{i:y_i=k} x_i$$
+
+$$\hat{\sigma^2} = \frac{1}{n-K} \sum^K_{k=1} \sum_{i:yi=k}(x_i - \hat{mu}_k)^2$$
+
+where $n$ is the total number of training observations, and $n_k$ is the number of training observations in the $k$th class.
+
+To reiterate, the LDA classifier results from assuming that the observations within each class come from a normal distribution with a class-specific mean vector and a common variance $\sigma^2$, and plugging estimates for these aprameters into the Bayes classifier. 
+
+##Linear Discriminant Analysis for p > 1
+
+We'll assume $X = (X_1,X_2,...,X_p)$ is drawn from a *multivariate Gaussian distribution*, with a class-specific mean vector and a common covariance matrix. This distribution assumes that each individual predictor follows a one-dimensional normal distribution, with some correlation between each pair of predictors. To indicate that a p-dimensional random variable $X$ has a multivariate Gaussian distribution, we write $X \approx N(\mu,\Sigma), where $\mu$ is the mean of $X$ and $Cov(X) = \Sigma$ is the $p\times p$ covariance matrix of $X$. Formally, the multivariate Gaussian density is defined as 
+
+$$f(x)= \frac{1}{(2\pi)^{p/2} |\Sigma|^{1/2}} exp \left ( - \frac{1}{2}(x-\mu)^T \Sigma^{-1}(x-\mu) \right) $$
+
+The LDA classifier assumes that the observations in the $k$th class are drawn from a multivariate Gaussian distribution $N(\mu,\Sigma)$. The Bayes classifier assigns an observation $X=x$ to the class for which
+
+$$\delta_x(x) = x^T \Sigma^{-1} \mu_k -\frac{1}{2}\mu_k^T \Sigma^{-1} \mu_k + log(\pi_k)$$
+
+is largest.
+
+#LAB: Logistic regression, LDA, QDA, and KNN
+
+
+```{r}
+library(ISLR)
+?Smarket
+names(Smarket)
+dim(Smarket)
+summary(Smarket)
+attach(Smarket)
+```
+
+```{r}
+cor(Smarket[-9]) #Direction is not a number
+plot(Volume)
+```
+
+## Logistic regression
+
+```{r}
+glm.fit <- glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Smarket, family=binomial)
+summary(glm.fit)
+coef(glm.fit) 
+summary(glm.fit)$coef
+summary(glm.fit)$coef[,4]
+```
+
+The *"response"* part tells *predict()* to give us probabilities of the form $P(Y=1|X)$
+
+```{r}
+glm.probs <- predict(glm.fit,type="response")
+glm.probs[1:20]
+glm.pred=rep("Down",1250) #1250 is the data amount
+glm.pred[glm.probs>.5]="Up"
+table(glm.pred,Direction) #confusion matrix, correct predictions in the diagonal
+(145+507)/1250
+mean(glm.pred==Direction)
+```
+
+We are using only training data so this error rate is too optimistic.
+
+```{r}
+train <- (Year < 2005) #boolean vector
+Smarket.2005=Smarket[!train,]
+Direction.2005=Direction[!train] #!train is the opposite of train
+```
+
+```{r}
+glm.fit <- glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Smarket, family=binomial, subset=train)
+glm.probs<-predict(glm.fit,Smarket.2005,type="response")
+```
+
+```{r}
+glm.pred=rep("Down",252) #252 is the data amount
+glm.pred[glm.probs>.5]="Up"
+table(glm.pred,Direction.2005) #confusion matrix, correct predictions in the diagonal
+mean(glm.pred==Direction.2005)
+mean(glm.pred!=Direction.2005)
+```
+
+##Linear discriminant analysis
+
+```{r}
+library(MASS)
+```
+```{r}
+lda.fit<-lda(Direction~Lag1+Lag2, data=Smarket,subset=train)
+lda.fit
+plot(lda.fit)
+```
+
+```{r}
+lda.pred<-predict(lda.fit,Smarket.2005)
+names(lda.pred)
+lda.class<-lda.pred$class
+table(lda.class,Direction.2005)
+mean(lda.class==Direction.2005)
+```
+
+##Quadratic Discriminant Analysis
+
+```{r}
+qda.fit<-qda(Direction~Lag1+Lag2,data=Smarket,subset=train)
+qda.fit
+qda.class<-predict(qda.fit,Smarket.2005)$class
+table(qda.class,Direction.2005)
+mean(qda.class==Direction.2005)
+```
+
+##K-nearest Neighbors
+
+```{r}
+library(class)
+train.X=cbind(Lag1,Lag2)[train,] #matrix of predictors for the training data
+test.X=cbind(Lag1,Lag2)[!train,] #matrix of predictors for the test data
+train.Direction=Direction[train] #class labels for the training data
+```
+```{r}
+set.seed(1)
+knn.pred=knn(train.X,test.X,train.Direction,k=1)
+table(knn.pred,Direction.2005)
+mean(knn.pred==Direction.2005) #0.5, bad ofc, lets try k=3
+```
+
+```{r}
+knn.pred=knn(train.X,test.X,train.Direction,k=3)
+table(knn.pred,Direction.2005)
+mean(knn.pred==Direction.2005)
+```
+
+##Application to Caravan Insurance Data
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+dim(Caravan)
+attach(Caravan)
+summary(Purchase)
+348/5822 #~6% bought insurance
+```
+We want to standardize the data so that all variables are given a mean of zero and a standard deviation of one. This helps because KNN looks for distance between points and a 1 point difference in income and age for it are the same while for practical purposes 1 more year is of greater importance than 1 more dollar
+```{r}
+fix(Caravan)
+standardized.X<-scale((Caravan[,-86])) #86th column is the qualitative response
+```
+
+```{r}
+test<-1:1000
+train.X<-standardized.X[-test,]
+test.X<-standardized.X[test,]
+train.Y<-Purchase[-test]
+test.Y<-Purchase[test]
+set.seed(1)
+knn.pred<-knn(train.X,test.X,train.Y,k=1)
+mean(test.Y!=knn.pred) 
+mean(test.Y!="No")
+```
+
+```{r}
+table(knn.pred,test.Y)
+9/(68+9)
+
+knn.pred<-knn(train.X,test.X,train.Y,k=3)
+table(knn.pred,test.Y)
+
+knn.pred<-knn(train.X,test.X,train.Y,k=5)
+table(knn.pred,test.Y)
+```
+
+```{r}
+glm.fit<-glm(Purchase~.,data=Caravan,family=binomial,subset=-test)
+glm.probs=predict(glm.fit,Caravan[test,],type="response")
+glm.pred=rep("No",1000)
+glm.pred[glm.probs>.5]="Yes"
+table(glm.pred,test.Y) #terrible
+
+glm.pred=rep("No",1000)
+glm.pred[glm.probs>.25]="Yes" #notice the >.25
+table(glm.pred,test.Y)
+11/(22+11) #very good!
+```
+
+
+
+
+
