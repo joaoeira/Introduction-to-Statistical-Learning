@@ -1,0 +1,226 @@
+---
+title: "Chapter 5 - Resampling Methods"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r}
+set.seed(1)
+library(ISLR)
+library(boot)
+attach(Default)
+```
+
+**5**
+
+```{r}
+#a)
+glm.fit<-glm(default~income+balance, data=Default, family = binomial)
+summary(glm.fit)
+```
+```{r}
+#b)
+#i)
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+#ii)
+glm.fit1<-glm(default~income+balance, data=Default, family = binomial, subset=train)
+#iii)
+glm.probs<-predict(glm.fit1,type="response")
+glm.pred<-rep("No",5000)
+glm.pred[glm.probs>.5]<-"Yes"
+table(glm.pred,default[train])
+mean(default==glm.pred)
+#iv)
+(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+```
+
+```{r}
+#c)
+#1st repetition
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1<-glm(default~income+balance, data=Default, family = binomial, subset=train)
+glm.probs<-predict(glm.fit1,type="response")
+glm.pred<-rep("No",5000)
+glm.pred[glm.probs>.5]<-"Yes"
+table(glm.pred,default[train])
+mean(default==glm.pred)
+(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+```
+
+```{r}
+#c)
+#2nd repetition
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1<-glm(default~income+balance, data=Default, family = binomial, subset=train)
+glm.probs<-predict(glm.fit1,type="response")
+glm.pred<-rep("No",5000)
+glm.pred[glm.probs>.5]<-"Yes"
+table(glm.pred,default[train])
+mean(default==glm.pred)
+(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+```
+
+```{r}
+#c)
+#3rd repetition
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1<-glm(default~income+balance, data=Default, family = binomial, subset=train)
+glm.probs<-predict(glm.fit1,type="response")
+glm.pred<-rep("No",5000)
+glm.pred[glm.probs>.5]<-"Yes"
+table(glm.pred,default[train])
+mean(default==glm.pred)
+(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+```
+
+```{r}
+#some variability, lets create a mean of this for 50 repetitions for fun
+mean.validation = rep(1,50)
+for(i in 1:50){
+  train=sample(dim(Default)[1],dim(Default)[1]/2)
+  glm.fit1<-glm(default~income+balance, data=Default, family = binomial, subset=train)
+  glm.probs<-predict(glm.fit1,type="response")
+  glm.pred<-rep("No",5000)
+  glm.pred[glm.probs>.5]<-"Yes"
+  table(glm.pred,default[train])
+  mean(default==glm.pred)
+  mean.validation[i]<-(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+}
+mean(mean.validation)
+
+mean.validation = rep(1,500)
+for(i in 1:500){
+  train=sample(dim(Default)[1],dim(Default)[1]/2)
+  glm.fit1<-glm(default~income+balance, data=Default, family = binomial, subset=train)
+  glm.probs<-predict(glm.fit1,type="response")
+  glm.pred<-rep("No",5000)
+  glm.pred[glm.probs>.5]<-"Yes"
+  table(glm.pred,default[train])
+  mean(default==glm.pred)
+  mean.validation[i]<-(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+}
+mean(mean.validation)
+```
+```{r}
+#d)
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1<-glm(default~income+balance+student, data=Default, family = binomial, subset=train)
+glm.probs<-predict(glm.fit1,type="response")
+glm.pred<-rep("No",5000)
+glm.pred[glm.probs>.5]<-"Yes"
+table(glm.pred,default[train])
+mean(default==glm.pred)
+(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+
+#fuck it lets do this
+mean.validation = rep(1,500)
+for(i in 1:500){
+  train=sample(dim(Default)[1],dim(Default)[1]/2)
+  glm.fit1<-glm(default~income+balance+student, data=Default, family = binomial, subset=train)
+  glm.probs<-predict(glm.fit1,type="response")
+  glm.pred<-rep("No",5000)
+  glm.pred[glm.probs>.5]<-"Yes"
+  table(glm.pred,default[train])
+  mean(default==glm.pred)
+  mean.validation[i]<-(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+}
+mean(mean.validation)
+#slightly worse, not that much
+```
+
+**6**
+```{r}
+#a)
+set.seed(1)
+glm.fit<-glm(default~income+balance, data=Default, family = binomial)
+summary(glm.fit)$coefficients
+```
+
+```{r}
+#b)
+boot.fn <-function(data,index){
+  return(summary(glm(default~income+balance, data=data, family = binomial,subset=index))$coefficients[,2])
+}
+```
+
+```{r}
+#c)
+boot(Default,boot.fn,R=1000)
+```
+
+
+**7**
+
+```{r}
+#a)
+glm.fit<-glm(default~balance, data=Default, family = binomial)
+#b)
+glm.fit<-glm(default~balance, data=Default, family = binomial,subset=-1,)
+#c)
+predict.glm(glm.fit,Default[1,],type="response")>0.5
+#d)
+pred.res = rep(0,dim(Default)[1])
+for(i in 1:dim(Default)[1]){
+  glm.fit<-glm(default~balance, data=Default, family = binomial,subset=-i,)
+  if((predict.glm(glm.fit,Default[i,],type="response")>0.5) != Default[i,]$default){
+    pred.res[i]=1
+  }
+}
+#this is wrong but fuck it it takes too much time to run
+```
+
+** 8 **
+
+```{r}
+#a)
+set.seed(1)
+y=rnorm(100)
+x=rnorm(100)
+y=x-2*x^2+rnorm(100)
+#b)
+plot(x,y)
+#c)
+Data<-data.frame(x,y)
+cv.glm(Data,glm(y~x))$delta
+cv.glm(Data,glm(y~poly(x,2)))$delta
+cv.glm(Data,glm(y~poly(x,3)))$delta
+cv.glm(Data,glm(y~poly(x,4)))$delta
+#d)
+set.seed(50)
+cv.glm(Data,glm(y~x))$delta
+cv.glm(Data,glm(y~poly(x,2)))$delta
+cv.glm(Data,glm(y~poly(x,3)))$delta
+cv.glm(Data,glm(y~poly(x,4)))$delta
+#i didnt run the rnorm function again
+#e)
+#yap
+#f)
+summary(glm(y~poly(x,2)))
+summary(glm(y~poly(x,3)))
+summary(glm(y~poly(x,4)))
+```
+
+** 9 **
+
+```{r}
+library(MASS)
+attach(Boston)
+summary(Boston)
+```
+
+```{r}
+#a)
+mean(medv)
+#b)
+sd(medv)/I(506^0.5)
+#c)
+boot.fn <- function(data,index){
+  return(mean(data[index]))
+}
+boot(medv,boot.fn,1000)
+#c)
+#bored
+```
+
+

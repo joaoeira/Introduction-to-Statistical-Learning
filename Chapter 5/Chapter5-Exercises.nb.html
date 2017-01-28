@@ -142,7 +142,7 @@ $(document).ready(function () {
 </style>
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("Chapter5-Notes.Rmd");
+  window.initializeSourceEmbed("Chapter5-Exercises.Rmd");
   window.initializeCodeFolding("show" === "show");
 });
 </script>
@@ -172,66 +172,425 @@ $(document).ready(function () {
 
 
 <!-- rnb-text-begin -->
-<p>Resampling methods involve repeatedly drawing samples from a training set and refitting a model of interest on each sample in order to obtain additional information about the fitted model. In this chapter, we discuss two of the most commonly used resampling methods, <em>cross-validation</em> and the <em>bootstrap</em>.</p>
-<p>Cross-validation can be used to estimate the test error associated with a given statistical learning method in order to evaluate its performance, or to select the appropriate level of flexibility. The process of evaluating a model’s performance is known as <em>model assessment</em>, whereas the process of selecting the proper level of flexibility for a model is known as <em>model selection</em>.</p>
-<p>The bootstrap is used in several contexts, most commonly to provide a measure of accuracy of a parameter estimate or of a given statistical learning method.</p>
-<div id="cross-validation" class="section level1">
-<h1>Cross-Validation</h1>
-<p>In the absence of a very large designated test set that can be used to directly estimate the test error rate, a number of techniques can be used to estimate this quantity using the available training data. Some methods make a mathematical adjustment to the training error rate in order to estimate the test error rate. In this section, we instead consider a class of methods that estimate the test error rate by holding out a subset of the training observations from the fitting process, and then applying the statistical learning method to those held out observations.</p>
-<div id="the-validation-set-approach" class="section level2">
-<h2>The Validation Set Approach</h2>
-<p>Suppose that we would like to estimate the test error associated with fitting a particular statistical learning method on a set of samples. The validation set approach is a very simple strategy for this task. It involves randomly dividing the available set of samples into two parts, a training set and a validation set or hold-out set. The model is fit on the training set, and the fitted model is used to predict the responses for the observations in the validation set. The resulting validation set error rate — typically assessed using MSE in the case of a quantitative response — provides an estimate of the test error rate.</p>
-<p>The validation set approach is conceptually simple and is easy to implement. But it has two potential drawbacks:</p>
-<ol style="list-style-type: decimal">
-<li><p>As is shown in the right-hand panel of Figure 5.2, the validation estimate of the test error rate can be highly variable, depending on pre- cisely which observations are included in the training set and which observations are included in the validation set.</p></li>
-<li><p>In the validation approach, only a subset of the observations — those that are included in the training set rather than in the validation set — are used to fit the model. Since statistical methods tend to perform worse when trained on fewer observations, this suggests that the validation set error rate may tend to overestimate the test error rate for the model fit on the entire data set.</p></li>
-</ol>
-</div>
-<div id="leave-one-out-cross-validation" class="section level2">
-<h2>Leave-One-Out Cross-Validation</h2>
-<p>Like the validation set approach, LOOCV involves splitting the set of observations into two parts. However, instead of creating two subsets of comparable size, a single observation <span class="math inline">\((x_1,y_1)\)</span> is used for the validation set, and the remaining observations make up the training set. The statistical learning method is fit on the <span class="math inline">\(n-1\)</span> training observations, and a prediction <span class="math inline">\(\hat{y_1}\)</span> is made for the excluded observation. Since <span class="math inline">\((x_1,y_1)\)</span> was not used in the fitting process, $MSE_1 = (y_1 - )^2 provides an approximately unbiased estimate for the test error, though we can’t generalize this for the test error for the whole fitting procedure itself.</p>
-<p>However, we can repeat this procedure <span class="math inline">\(n\)</span> times by training the statistical learning procedure on the <span class="math inline">\(n-1\)</span> observations, producing <span class="math inline">\(n\)</span> squared errors. The LOOCV estiamte for the test MSE is the average of these <span class="math inline">\(n\)</span> test error estimates.</p>
-<p><span class="math display">\[CV_{(n)} = \frac{1}{n} \sum_{i=1}^n MSE_i\]</span></p>
-<p>LOOCV has a couple of major advantages over the validation set approach. First, it has far less bias. In LOOCV, we repeatedly fit the statistical learning method using training sets that contain <span class="math inline">\(n-1\)</span> observations, almost as many as are in the entire data set. This is in contrast to the validation set approach, in which the training set is typically around half the size of the original data set. Consequently, the LOOCV approach tends not to overestimate the test error rate as much as the validation set approach does. Second, in contrast to the validation approach which will yield different results when applied repeatedly due to randomness in the training/validation set splits, performing LOOCV multiple times will always yield the same results: there is no randomness in the training/validation set splits.</p>
-<p>LOOCV has the potential to be expensive to implement, since the model has to be fit n times. This can be very time consuming if n is large, and if each individual model is slow to fit. With least squares linear or polynomial regression, an amazing shortcut makes the cost of LOOCV the same as that of a single model fit! The following formula holds:</p>
-<p><span class="math display">\[CV_{(n)} = \frac{1}{n} \sum_{i=1}^n \left ( \frac{y_i - \hat{y_i}}{1-h_i} \right )^2\]</span></p>
-<p>where <span class="math inline">\(h_i\)</span> is the leverage. This is like the ordinary MSE, except the <span class="math inline">\(i\)</span>th residual is divided by <span class="math inline">\(1-h_i\)</span>. The leverage lies between 1/<span class="math inline">\(n\)</span> and 1, and reflects the amount that an observation influences its own fit. Hence the residuals for high-leverage points are inflated in this formula by exactly the right amount for this equality to hold.</p>
-<p>LOOCV is a very general method, and can be used with any kind of predictive modeling. For example we could use it with logistic regression or linear discriminant analysis, or any of the methods discussed in later chapters. The magic formula does not hold in general, in which case the model has to be refit <span class="math inline">\(n\)</span> times.</p>
-</div>
-<div id="k-fold-cross-validation" class="section level2">
-<h2>k-Fold Cross-Validation</h2>
-<p>This approach involves randomly dividing the set of observations into <span class="math inline">\(k\)</span> groups, or <em>folds</em> of approximately equal size. The first fold is treated as a validation set, and the method is fit on the remaining <span class="math inline">\(k-1\)</span> folds. The MSE is then computed on the observations in the held-out fold. This procedure is repeated <span class="math inline">\(k\)</span> times; each time, a different group of observations is treated as a validation set. This process results in <em>k</em> estimates of the test error. The k-fold CV estimate is computed by averaging these values</p>
-<p><span class="math display">\[CV_{(k)} = \frac{1}{k} \sum^k_{i=1} MSE_i \]</span></p>
-<p>The LOOCV is a special case of this method where <span class="math inline">\(k=n\)</span>. In practice, ine typically performs k-fold CV using <span class="math inline">\(k=5\)</span> or <span class="math inline">\(k=10\)</span> because of computational concerns and non-computational concerns involving the bias-variance trade-off.</p>
-<p>When we perform cross-validation, our goal might be to determine how well a given statistical learning procedure can be expected to perform on independent data; in this case, the actual estimate of the test MSE is of interest. But at other times we are interested only in the location of the minimum point in the estimated test MSE curve. This is because we might be performing cross-validation on a number of statistical learning methods, or on a single method using different levels of flexibility, in order to identify the method that results in the lowest test error. For this purpose, the location of the minimum point in the estimated test MSE curve is important, but the actual value of the estimated test MSE is not.</p>
-</div>
-<div id="bias-variance-trade-off-for-k-fold-cross-validation" class="section level2">
-<h2>Bias-Variance Trade-Off for k-Fold Cross-Validation</h2>
-<p>Putting computational issues aside, a less obvious but potentially more important advantage of k-fold CV is that it often gives more accurate estimates of the test error rate than does LOOCV. This has to do with a bias-variance trade-off.</p>
-<p>The validation set approach can lead to overestimates of the test error rate, since in this approach the training set used to fit the statistical learning method contains only half the observations of the entire data set. Using this logic, it is not hard to see that LOOCV will give approximately unbiased estimates of the test error, since each training set contains <span class="math inline">\(n-1\)</span> observations, which is almost as many as the number of observations in the full data set. Performing k-fold CV with <span class="math inline">\(k=5\)</span> or <span class="math inline">\(k=10\)</span> will lead to an intermediate level of bias since each training set contains <span class="math inline">\((k-1)n/k\)</span> observations - fewer than in the LOOCV approach, but more than in the validation set approach. Therefore, from the perspective of bias reduction, it is clear that the LOOCV approach is preferred to k-fold CV.</p>
-<p>However, we know that there’s a trade-off between bias and variance, and it turns out that LOOCV has higher variance than does k-fold CV with <span class="math inline">\(k&lt;n\)</span>. Since the mean of many highly correlated quantities has higher variance than does the mean of many quantities that are not as highly correlated, the test error estimate resulting from LOOCV tends to have higher variance than does the test error estimate resulting from k-fold CV.</p>
-<p>To summarize, there is a bias-variance trade-off associated with the choice of k in k-fold cross-validation. Typically, given these considerations, one performs k-fold cross-validation using k = 5 or k = 10, as these values have been shown empirically to yield test error rate estimates that suffer neither from excessively high bias nor from very high variance.</p>
-</div>
-<div id="cross-validation-on-classification-problems" class="section level2">
-<h2>Cross-Validation on Classification Problems</h2>
-<p>In this setting, cross-validation works just as described earlier in this chapter, except that rather than using MSE to quantify test error, we instead use the the number of misclassified observations. For instance, in the classification setting, the LOOCV error rate takes the form</p>
-<p><span class="math display">\[CV_{(n)} = \frac{1}{n} \sum^n_{i=1} Err_i \]</span> where <span class="math inline">\(Err_i = I(y_i \neq \hat{y_i})\)</span>.</p>
-</div>
-</div>
-<div id="the-bootstrap" class="section level1">
-<h1>The Bootstrap</h1>
-<p>The <em>bootstrap</em> is a widely applicable and extremely powerful statistical tool that can be used to quantify the uncertainty associated with a given estimator or statistical learning method. As a simple example, the bootstrap can be used to estimate the standard errors of the coefficients from a linear regression fit. In the specific case of linear regression, this is not particularly useful, since we saw in Chapter 3 that standard statistical software such as R outputs such standard errors automatically. However, the power of the bootstrap lies in the fact that it can be easily applied to a wide range of statistical learning methods, including some for which a measure of vari- ability is otherwise difficult to obtain and is not automatically output by statistical software.</p>
-<p>the bootstrap approach allows us to use a computer to emulate the process of obtaining new sample sets, so that we can estimate the variability of <span class="math inline">\(\hat{\alpha}\)</span> without generating additional samples. Rather than repeatedly obtaining independent data sets from the population, we instead obtain distinct data sets by repeatedly sample observations <strong>from the original data set</strong>.</p>
-<p>We randomly select <span class="math inline">\(n\)</span> observations from the data set in order to produce a bootstrap data set, <span class="math inline">\(Z^{*1}\)</span>. The sampling is performed with <em>replacement</em>, which means that the same observation can occur more than once in the bootstrap data set. We can use <span class="math inline">\(Z^{*1}\)</span> to produce a new bootstrap estimate for <span class="math inline">\(\alpha\)</span>, which we call <span class="math inline">\(\hat{\alpha^{*1}}\)</span>, This procedure is repeated <span class="math inline">\(B\)</span> times for some large value of <span class="math inline">\(B\)</span>, in order to produce <span class="math inline">\(B\)</span> different bootstrap data sets, <span class="math inline">\(Z^{*1},Z^{*2},...Z^{*B}\)</span>, and their corresponding <span class="math inline">\(\alpha\)</span> estimates. We can compute the standard error of these bootstrap esstimates using the formula</p>
-<p><span class="math display">\[SE_{B}(\hat{\alpha}) = \sqrt{\frac{1}{B-1} \sum^B_{r=1} \left(  \hat{\alpha}^{*r} - \frac{1}{B} \sum^B_{r'=1} \hat{\alpha}^{*r'} \right )^2}\]</span></p>
-<p>This serves as an estimate of the standard error of <span class="math inline">\(\hat{\alpha}\)</span> estiamted from the original data set.</p>
-</div>
-<div id="lab-cross-validation-and-the-bootstrap" class="section level1">
-<h1>Lab: Cross-Validation and the Bootstrap</h1>
 <!-- rnb-text-end -->
-</div>
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2V0LnNlZWQoMSlcbmxpYnJhcnkoSVNMUilcbmxpYnJhcnkoYm9vdClcbmF0dGFjaChEZWZhdWx0KVxuYGBgIn0= -->
+<pre class="r"><code>set.seed(1)
+library(ISLR)
+library(boot)
+attach(Default)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p><strong>5</strong></p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2EpXG5nbG0uZml0PC1nbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZSwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbClcbnN1bW1hcnkoZ2xtLmZpdClcbmBgYCJ9 -->
+<pre class="r"><code>#a)
+glm.fit&lt;-glm(default~income+balance, data=Default, family = binomial)
+summary(glm.fit)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5DYWxsOlxuZ2xtKGZvcm11bGEgPSBkZWZhdWx0IH4gaW5jb21lICsgYmFsYW5jZSwgZmFtaWx5ID0gYmlub21pYWwsIFxuICAgIGRhdGEgPSBEZWZhdWx0KVxuXG5EZXZpYW5jZSBSZXNpZHVhbHM6IFxuICAgIE1pbiAgICAgICAxUSAgIE1lZGlhbiAgICAgICAzUSAgICAgIE1heCAgXG4tMi40NzI1ICAtMC4xNDQ0ICAtMC4wNTc0ICAtMC4wMjExICAgMy43MjQ1ICBcblxuQ29lZmZpY2llbnRzOlxuICAgICAgICAgICAgICBFc3RpbWF0ZSBTdGQuIEVycm9yIHogdmFsdWUgUHIoPnx6fCkgICAgXG4oSW50ZXJjZXB0KSAtMS4xNTRlKzAxICA0LjM0OGUtMDEgLTI2LjU0NSAgPCAyZS0xNiAqKipcbmluY29tZSAgICAgICAyLjA4MWUtMDUgIDQuOTg1ZS0wNiAgIDQuMTc0IDIuOTllLTA1ICoqKlxuYmFsYW5jZSAgICAgIDUuNjQ3ZS0wMyAgMi4yNzRlLTA0ICAyNC44MzYgIDwgMmUtMTYgKioqXG4tLS1cblNpZ25pZi4gY29kZXM6ICAwIOKAmCoqKuKAmSAwLjAwMSDigJgqKuKAmSAwLjAxIOKAmCrigJkgMC4wNSDigJgu4oCZIDAuMSDigJgg4oCZIDFcblxuKERpc3BlcnNpb24gcGFyYW1ldGVyIGZvciBiaW5vbWlhbCBmYW1pbHkgdGFrZW4gdG8gYmUgMSlcblxuICAgIE51bGwgZGV2aWFuY2U6IDI5MjAuNiAgb24gOTk5OSAgZGVncmVlcyBvZiBmcmVlZG9tXG5SZXNpZHVhbCBkZXZpYW5jZTogMTU3OS4wICBvbiA5OTk3ICBkZWdyZWVzIG9mIGZyZWVkb21cbkFJQzogMTU4NVxuXG5OdW1iZXIgb2YgRmlzaGVyIFNjb3JpbmcgaXRlcmF0aW9uczogOFxuIn0= -->
+<pre><code>
+Call:
+glm(formula = default ~ income + balance, family = binomial, 
+    data = Default)
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiQ2hhcHRlciA1IC0gUmVzYW1wbGluZyBNZXRob2RzIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDogZGVmYXVsdAogIGh0bWxfbm90ZWJvb2s6IGRlZmF1bHQKLS0tCgpSZXNhbXBsaW5nIG1ldGhvZHMgaW52b2x2ZSByZXBlYXRlZGx5IGRyYXdpbmcgc2FtcGxlcyBmcm9tIGEgdHJhaW5pbmcgc2V0IGFuZCByZWZpdHRpbmcgYSBtb2RlbCBvZiBpbnRlcmVzdCBvbiBlYWNoIHNhbXBsZSBpbiBvcmRlciB0byBvYnRhaW4gYWRkaXRpb25hbCBpbmZvcm1hdGlvbiBhYm91dCB0aGUgZml0dGVkIG1vZGVsLiBJbiB0aGlzIGNoYXB0ZXIsIHdlIGRpc2N1c3MgdHdvIG9mIHRoZSBtb3N0IGNvbW1vbmx5IHVzZWQgcmVzYW1wbGluZyBtZXRob2RzLCAqY3Jvc3MtdmFsaWRhdGlvbiogYW5kIHRoZSAqYm9vdHN0cmFwKi4KCkNyb3NzLXZhbGlkYXRpb24gY2FuIGJlIHVzZWQgdG8gZXN0aW1hdGUgdGhlIHRlc3QgZXJyb3IgYXNzb2NpYXRlZCB3aXRoIGEgZ2l2ZW4gc3RhdGlzdGljYWwgbGVhcm5pbmcgbWV0aG9kIGluIG9yZGVyIHRvIGV2YWx1YXRlIGl0cyBwZXJmb3JtYW5jZSwgb3IgdG8gc2VsZWN0IHRoZSBhcHByb3ByaWF0ZSBsZXZlbCBvZiBmbGV4aWJpbGl0eS4gVGhlIHByb2Nlc3Mgb2YgZXZhbHVhdGluZyBhIG1vZGVsJ3MgcGVyZm9ybWFuY2UgaXMga25vd24gYXMgKm1vZGVsIGFzc2Vzc21lbnQqLCB3aGVyZWFzIHRoZSBwcm9jZXNzIG9mIHNlbGVjdGluZyB0aGUgcHJvcGVyIGxldmVsIG9mIGZsZXhpYmlsaXR5IGZvciBhIG1vZGVsIGlzIGtub3duIGFzICptb2RlbCBzZWxlY3Rpb24qLgoKVGhlIGJvb3RzdHJhcCBpcyB1c2VkIGluIHNldmVyYWwgY29udGV4dHMsIG1vc3QgY29tbW9ubHkgdG8gcHJvdmlkZSBhIG1lYXN1cmUgb2YgYWNjdXJhY3kgb2YgYSBwYXJhbWV0ZXIgZXN0aW1hdGUgb3Igb2YgYSBnaXZlbiBzdGF0aXN0aWNhbCBsZWFybmluZyBtZXRob2QuCgojQ3Jvc3MtVmFsaWRhdGlvbgoKSW4gdGhlIGFic2VuY2Ugb2YgYSB2ZXJ5IGxhcmdlIGRlc2lnbmF0ZWQgdGVzdCBzZXQgdGhhdCBjYW4gYmUgdXNlZCB0byBkaXJlY3RseSBlc3RpbWF0ZSB0aGUgdGVzdCBlcnJvciByYXRlLCBhIG51bWJlciBvZiB0ZWNobmlxdWVzIGNhbiBiZSB1c2VkIHRvIGVzdGltYXRlIHRoaXMgcXVhbnRpdHkgdXNpbmcgdGhlIGF2YWlsYWJsZSB0cmFpbmluZyBkYXRhLiBTb21lIG1ldGhvZHMgbWFrZSBhIG1hdGhlbWF0aWNhbCBhZGp1c3RtZW50IHRvIHRoZSB0cmFpbmluZyBlcnJvciByYXRlIGluIG9yZGVyIHRvIGVzdGltYXRlIHRoZSB0ZXN0IGVycm9yIHJhdGUuIEluIHRoaXMgc2VjdGlvbiwgd2UgaW5zdGVhZCBjb25zaWRlciBhIGNsYXNzIG9mIG1ldGhvZHMgdGhhdCBlc3RpbWF0ZSB0aGUgdGVzdCBlcnJvciByYXRlIGJ5IGhvbGRpbmcgb3V0IGEgc3Vic2V0IG9mIHRoZSB0cmFpbmluZyBvYnNlcnZhdGlvbnMgZnJvbSB0aGUgZml0dGluZyBwcm9jZXNzLCBhbmQgdGhlbiBhcHBseWluZyB0aGUgc3RhdGlzdGljYWwgbGVhcm5pbmcgbWV0aG9kIHRvIHRob3NlIGhlbGQgb3V0IG9ic2VydmF0aW9ucy4gCgojI1RoZSBWYWxpZGF0aW9uIFNldCBBcHByb2FjaAoKU3VwcG9zZSB0aGF0IHdlIHdvdWxkIGxpa2UgdG8gZXN0aW1hdGUgdGhlIHRlc3QgZXJyb3IgYXNzb2NpYXRlZCB3aXRoIGZpdHRpbmcgYSBwYXJ0aWN1bGFyIHN0YXRpc3RpY2FsIGxlYXJuaW5nIG1ldGhvZCBvbiBhIHNldCBvZiBzYW1wbGVzLiBUaGUgdmFsaWRhdGlvbiBzZXQgYXBwcm9hY2ggaXMgYSB2ZXJ5IHNpbXBsZSBzdHJhdGVneSBmb3IgdGhpcyB0YXNrLiBJdCBpbnZvbHZlcyByYW5kb21seSBkaXZpZGluZyB0aGUgYXZhaWxhYmxlIHNldCBvZiBzYW1wbGVzIGludG8gdHdvIHBhcnRzLCBhIHRyYWluaW5nIHNldCBhbmQgYSB2YWxpZGF0aW9uIHNldCBvciBob2xkLW91dCBzZXQuIFRoZSBtb2RlbCBpcyBmaXQgb24gdGhlIHRyYWluaW5nIHNldCwgYW5kIHRoZSBmaXR0ZWQgIG1vZGVsIGlzIHVzZWQgdG8gcHJlZGljdCB0aGUgcmVzcG9uc2VzIGZvciB0aGUgb2JzZXJ2YXRpb25zIGluIHRoZSB2YWxpZGF0aW9uIHNldC4gVGhlIHJlc3VsdGluZyB2YWxpZGF0aW9uIHNldCBlcnJvciByYXRlIOKAlCB0eXBpY2FsbHkgYXNzZXNzZWQgdXNpbmcgTVNFIGluIHRoZSBjYXNlIG9mIGEgcXVhbnRpdGF0aXZlIHJlc3BvbnNlIOKAlCBwcm92aWRlcyBhbiBlc3RpbWF0ZSBvZiB0aGUgdGVzdCBlcnJvciByYXRlLgoKVGhlIHZhbGlkYXRpb24gc2V0IGFwcHJvYWNoIGlzIGNvbmNlcHR1YWxseSBzaW1wbGUgYW5kIGlzIGVhc3kgdG8gaW1wbGVtZW50LiBCdXQgaXQgaGFzIHR3byBwb3RlbnRpYWwgZHJhd2JhY2tzOgoKMS4gQXMgaXMgc2hvd24gaW4gdGhlIHJpZ2h0LWhhbmQgcGFuZWwgb2YgRmlndXJlIDUuMiwgdGhlIHZhbGlkYXRpb24gZXN0aW1hdGUgb2YgdGhlIHRlc3QgZXJyb3IgcmF0ZSBjYW4gYmUgaGlnaGx5IHZhcmlhYmxlLCBkZXBlbmRpbmcgb24gcHJlLSBjaXNlbHkgd2hpY2ggb2JzZXJ2YXRpb25zIGFyZSBpbmNsdWRlZCBpbiB0aGUgdHJhaW5pbmcgc2V0IGFuZCB3aGljaCBvYnNlcnZhdGlvbnMgYXJlIGluY2x1ZGVkIGluIHRoZSB2YWxpZGF0aW9uIHNldC4KCjIuIEluIHRoZSB2YWxpZGF0aW9uIGFwcHJvYWNoLCBvbmx5IGEgc3Vic2V0IG9mIHRoZSBvYnNlcnZhdGlvbnMg4oCUIHRob3NlIHRoYXQgYXJlIGluY2x1ZGVkIGluIHRoZSB0cmFpbmluZyBzZXQgcmF0aGVyIHRoYW4gaW4gdGhlIHZhbGlkYXRpb24gc2V0IOKAlCBhcmUgdXNlZCB0byBmaXQgdGhlIG1vZGVsLiBTaW5jZSBzdGF0aXN0aWNhbCBtZXRob2RzIHRlbmQgdG8gcGVyZm9ybSB3b3JzZSB3aGVuIHRyYWluZWQgb24gZmV3ZXIgb2JzZXJ2YXRpb25zLCB0aGlzIHN1Z2dlc3RzIHRoYXQgdGhlIHZhbGlkYXRpb24gc2V0IGVycm9yIHJhdGUgbWF5IHRlbmQgdG8gb3ZlcmVzdGltYXRlIHRoZSB0ZXN0IGVycm9yIHJhdGUgZm9yIHRoZSBtb2RlbCBmaXQgb24gdGhlIGVudGlyZSBkYXRhIHNldC4KCiMjIExlYXZlLU9uZS1PdXQgQ3Jvc3MtVmFsaWRhdGlvbgoKTGlrZSB0aGUgdmFsaWRhdGlvbiBzZXQgYXBwcm9hY2gsIExPT0NWIGludm9sdmVzIHNwbGl0dGluZyB0aGUgc2V0IG9mIG9ic2VydmF0aW9ucyBpbnRvIHR3byBwYXJ0cy4gSG93ZXZlciwgaW5zdGVhZCBvZiBjcmVhdGluZyB0d28gc3Vic2V0cyBvZiBjb21wYXJhYmxlIHNpemUsIGEgc2luZ2xlIG9ic2VydmF0aW9uICQoeF8xLHlfMSkkIGlzIHVzZWQgZm9yIHRoZSB2YWxpZGF0aW9uIHNldCwgYW5kIHRoZSByZW1haW5pbmcgb2JzZXJ2YXRpb25zIG1ha2UgdXAgdGhlIHRyYWluaW5nIHNldC4gVGhlIHN0YXRpc3RpY2FsIGxlYXJuaW5nIG1ldGhvZCBpcyBmaXQgb24gdGhlICRuLTEkIHRyYWluaW5nIG9ic2VydmF0aW9ucywgYW5kIGEgcHJlZGljdGlvbiAkXGhhdHt5XzF9JCBpcyBtYWRlIGZvciB0aGUgZXhjbHVkZWQgb2JzZXJ2YXRpb24uIFNpbmNlICQoeF8xLHlfMSkkIHdhcyBub3QgdXNlZCBpbiB0aGUgZml0dGluZyBwcm9jZXNzLCAkTVNFXzEgPSAoeV8xIC0gXGhhdHt5XzF9KV4yIHByb3ZpZGVzIGFuIGFwcHJveGltYXRlbHkgdW5iaWFzZWQgZXN0aW1hdGUgZm9yIHRoZSB0ZXN0IGVycm9yLCB0aG91Z2ggd2UgY2FuJ3QgZ2VuZXJhbGl6ZSB0aGlzIGZvciB0aGUgdGVzdCBlcnJvciBmb3IgdGhlIHdob2xlIGZpdHRpbmcgcHJvY2VkdXJlIGl0c2VsZi4KCkhvd2V2ZXIsIHdlIGNhbiByZXBlYXQgdGhpcyBwcm9jZWR1cmUgJG4kIHRpbWVzIGJ5IHRyYWluaW5nIHRoZSBzdGF0aXN0aWNhbCBsZWFybmluZyBwcm9jZWR1cmUgb24gdGhlICRuLTEkIG9ic2VydmF0aW9ucywgcHJvZHVjaW5nICRuJCBzcXVhcmVkIGVycm9ycy4gVGhlIExPT0NWIGVzdGlhbXRlIGZvciB0aGUgdGVzdCBNU0UgaXMgdGhlIGF2ZXJhZ2Ugb2YgdGhlc2UgJG4kIHRlc3QgZXJyb3IgZXN0aW1hdGVzLgoKJCRDVl97KG4pfSA9IFxmcmFjezF9e259IFxzdW1fe2k9MX1ebiBNU0VfaSQkCgpMT09DViBoYXMgYSBjb3VwbGUgb2YgbWFqb3IgYWR2YW50YWdlcyBvdmVyIHRoZSB2YWxpZGF0aW9uIHNldCBhcHByb2FjaC4gRmlyc3QsIGl0IGhhcyBmYXIgbGVzcyBiaWFzLiBJbiBMT09DViwgd2UgcmVwZWF0ZWRseSBmaXQgdGhlIHN0YXRpc3RpY2FsIGxlYXJuaW5nIG1ldGhvZCB1c2luZyB0cmFpbmluZyBzZXRzIHRoYXQgY29udGFpbiAkbi0xJCBvYnNlcnZhdGlvbnMsIGFsbW9zdCBhcyBtYW55IGFzIGFyZSBpbiB0aGUgZW50aXJlIGRhdGEgc2V0LiBUaGlzIGlzIGluIGNvbnRyYXN0IHRvIHRoZSB2YWxpZGF0aW9uIHNldCBhcHByb2FjaCwgaW4gd2hpY2ggdGhlIHRyYWluaW5nIHNldCBpcyB0eXBpY2FsbHkgYXJvdW5kIGhhbGYgdGhlIHNpemUgb2YgdGhlIG9yaWdpbmFsIGRhdGEgc2V0LiBDb25zZXF1ZW50bHksIHRoZSBMT09DViBhcHByb2FjaCB0ZW5kcyBub3QgdG8gb3ZlcmVzdGltYXRlIHRoZSB0ZXN0IGVycm9yIHJhdGUgYXMgbXVjaCBhcyB0aGUgdmFsaWRhdGlvbiBzZXQgYXBwcm9hY2ggZG9lcy4gU2Vjb25kLCBpbiBjb250cmFzdCB0byB0aGUgdmFsaWRhdGlvbiBhcHByb2FjaCB3aGljaCB3aWxsIHlpZWxkIGRpZmZlcmVudCByZXN1bHRzIHdoZW4gYXBwbGllZCByZXBlYXRlZGx5IGR1ZSB0byByYW5kb21uZXNzIGluIHRoZSB0cmFpbmluZy92YWxpZGF0aW9uIHNldCBzcGxpdHMsIHBlcmZvcm1pbmcgTE9PQ1YgbXVsdGlwbGUgdGltZXMgd2lsbCBhbHdheXMgeWllbGQgdGhlIHNhbWUgcmVzdWx0czogdGhlcmUgaXMgbm8gcmFuZG9tbmVzcyBpbiB0aGUgdHJhaW5pbmcvdmFsaWRhdGlvbiBzZXQgc3BsaXRzLgoKTE9PQ1YgaGFzIHRoZSBwb3RlbnRpYWwgdG8gYmUgZXhwZW5zaXZlIHRvIGltcGxlbWVudCwgc2luY2UgdGhlIG1vZGVsIGhhcyB0byBiZSBmaXQgbiB0aW1lcy4gVGhpcyBjYW4gYmUgdmVyeSB0aW1lIGNvbnN1bWluZyBpZiBuIGlzIGxhcmdlLCBhbmQgaWYgZWFjaCBpbmRpdmlkdWFsIG1vZGVsIGlzIHNsb3cgdG8gZml0LiBXaXRoIGxlYXN0IHNxdWFyZXMgbGluZWFyIG9yIHBvbHlub21pYWwgcmVncmVzc2lvbiwgYW4gYW1hemluZyBzaG9ydGN1dCBtYWtlcyB0aGUgY29zdCBvZiBMT09DViB0aGUgc2FtZSBhcyB0aGF0IG9mIGEgc2luZ2xlIG1vZGVsIGZpdCEgVGhlIGZvbGxvd2luZyBmb3JtdWxhIGhvbGRzOgoKJCRDVl97KG4pfSA9IFxmcmFjezF9e259IFxzdW1fe2k9MX1ebiBcbGVmdCAoIFxmcmFje3lfaSAtIFxoYXR7eV9pfX17MS1oX2l9IFxyaWdodCApXjIkJAoKd2hlcmUgJGhfaSQgaXMgdGhlIGxldmVyYWdlLiBUaGlzIGlzIGxpa2UgdGhlIG9yZGluYXJ5IE1TRSwgZXhjZXB0IHRoZSAkaSR0aCByZXNpZHVhbCBpcyBkaXZpZGVkIGJ5ICQxLWhfaSQuIFRoZSBsZXZlcmFnZSBsaWVzIGJldHdlZW4gMS8kbiQgYW5kIDEsIGFuZCByZWZsZWN0cyB0aGUgYW1vdW50IHRoYXQgYW4gb2JzZXJ2YXRpb24gaW5mbHVlbmNlcyBpdHMgb3duIGZpdC4gSGVuY2UgdGhlIHJlc2lkdWFscyBmb3IgaGlnaC1sZXZlcmFnZSBwb2ludHMgYXJlIGluZmxhdGVkIGluIHRoaXMgZm9ybXVsYSBieSBleGFjdGx5IHRoZSByaWdodCBhbW91bnQgZm9yIHRoaXMgZXF1YWxpdHkgdG8gaG9sZC4KCkxPT0NWIGlzIGEgdmVyeSBnZW5lcmFsIG1ldGhvZCwgYW5kIGNhbiBiZSB1c2VkIHdpdGggYW55IGtpbmQgb2YgcHJlZGljdGl2ZSBtb2RlbGluZy4gRm9yIGV4YW1wbGUgd2UgY291bGQgdXNlIGl0IHdpdGggbG9naXN0aWMgcmVncmVzc2lvbiBvciBsaW5lYXIgZGlzY3JpbWluYW50IGFuYWx5c2lzLCBvciBhbnkgb2YgdGhlIG1ldGhvZHMgZGlzY3Vzc2VkIGluIGxhdGVyIGNoYXB0ZXJzLiBUaGUgbWFnaWMgZm9ybXVsYSBkb2VzIG5vdCBob2xkIGluIGdlbmVyYWwsIGluIHdoaWNoIGNhc2UgdGhlIG1vZGVsIGhhcyB0byBiZSByZWZpdCAkbiQgdGltZXMuCgojIyBrLUZvbGQgQ3Jvc3MtVmFsaWRhdGlvbgoKVGhpcyBhcHByb2FjaCBpbnZvbHZlcyByYW5kb21seSBkaXZpZGluZyB0aGUgc2V0IG9mIG9ic2VydmF0aW9ucyBpbnRvICRrJCBncm91cHMsIG9yICpmb2xkcyogb2YgYXBwcm94aW1hdGVseSBlcXVhbCBzaXplLiBUaGUgZmlyc3QgZm9sZCBpcyB0cmVhdGVkIGFzIGEgdmFsaWRhdGlvbiBzZXQsIGFuZCB0aGUgbWV0aG9kIGlzIGZpdCBvbiB0aGUgcmVtYWluaW5nICRrLTEkIGZvbGRzLiBUaGUgTVNFIGlzIHRoZW4gY29tcHV0ZWQgb24gdGhlIG9ic2VydmF0aW9ucyBpbiB0aGUgaGVsZC1vdXQgZm9sZC4gVGhpcyBwcm9jZWR1cmUgaXMgcmVwZWF0ZWQgJGskIHRpbWVzOyBlYWNoIHRpbWUsIGEgZGlmZmVyZW50IGdyb3VwIG9mIG9ic2VydmF0aW9ucyBpcyB0cmVhdGVkIGFzIGEgdmFsaWRhdGlvbiBzZXQuIFRoaXMgcHJvY2VzcyByZXN1bHRzIGluICprKiBlc3RpbWF0ZXMgb2YgdGhlIHRlc3QgZXJyb3IuIFRoZSBrLWZvbGQgQ1YgZXN0aW1hdGUgaXMgY29tcHV0ZWQgYnkgYXZlcmFnaW5nIHRoZXNlIHZhbHVlcwoKJCRDVl97KGspfSA9IFxmcmFjezF9e2t9IFxzdW1ea197aT0xfSBNU0VfaSAkJAoKVGhlIExPT0NWIGlzIGEgc3BlY2lhbCBjYXNlIG9mIHRoaXMgbWV0aG9kIHdoZXJlICRrPW4kLiBJbiBwcmFjdGljZSwgaW5lIHR5cGljYWxseSBwZXJmb3JtcyBrLWZvbGQgQ1YgdXNpbmcgJGs9NSQgb3IgJGs9MTAkIGJlY2F1c2Ugb2YgY29tcHV0YXRpb25hbCBjb25jZXJucyBhbmQgbm9uLWNvbXB1dGF0aW9uYWwgY29uY2VybnMgaW52b2x2aW5nIHRoZSBiaWFzLXZhcmlhbmNlIHRyYWRlLW9mZi4KCldoZW4gd2UgcGVyZm9ybSBjcm9zcy12YWxpZGF0aW9uLCBvdXIgZ29hbCBtaWdodCBiZSB0byBkZXRlcm1pbmUgaG93IHdlbGwgYSBnaXZlbiBzdGF0aXN0aWNhbCBsZWFybmluZyBwcm9jZWR1cmUgY2FuIGJlIGV4cGVjdGVkIHRvIHBlcmZvcm0gb24gaW5kZXBlbmRlbnQgZGF0YTsgaW4gdGhpcyBjYXNlLCB0aGUgYWN0dWFsIGVzdGltYXRlIG9mIHRoZSB0ZXN0IE1TRSBpcyBvZiBpbnRlcmVzdC4gQnV0IGF0IG90aGVyIHRpbWVzIHdlIGFyZSBpbnRlcmVzdGVkIG9ubHkgaW4gdGhlIGxvY2F0aW9uIG9mIHRoZSBtaW5pbXVtIHBvaW50IGluIHRoZSBlc3RpbWF0ZWQgdGVzdCBNU0UgY3VydmUuIFRoaXMgaXMgYmVjYXVzZSB3ZSBtaWdodCBiZSBwZXJmb3JtaW5nIGNyb3NzLXZhbGlkYXRpb24gb24gYSBudW1iZXIgb2Ygc3RhdGlzdGljYWwgbGVhcm5pbmcgbWV0aG9kcywgb3Igb24gYSBzaW5nbGUgbWV0aG9kIHVzaW5nIGRpZmZlcmVudCBsZXZlbHMgb2YgZmxleGliaWxpdHksIGluIG9yZGVyIHRvIGlkZW50aWZ5IHRoZSBtZXRob2QgdGhhdCByZXN1bHRzIGluIHRoZSBsb3dlc3QgdGVzdCBlcnJvci4gRm9yIHRoaXMgcHVycG9zZSwgdGhlIGxvY2F0aW9uIG9mIHRoZSBtaW5pbXVtIHBvaW50IGluIHRoZSBlc3RpbWF0ZWQgdGVzdCBNU0UgY3VydmUgaXMgaW1wb3J0YW50LCBidXQgdGhlIGFjdHVhbCB2YWx1ZSBvZiB0aGUgZXN0aW1hdGVkIHRlc3QgTVNFIGlzIG5vdC4KCiMjIEJpYXMtVmFyaWFuY2UgVHJhZGUtT2ZmIGZvciBrLUZvbGQgQ3Jvc3MtVmFsaWRhdGlvbgoKUHV0dGluZyBjb21wdXRhdGlvbmFsIGlzc3VlcyBhc2lkZSwgYSBsZXNzIG9idmlvdXMgYnV0IHBvdGVudGlhbGx5IG1vcmUgaW1wb3J0YW50IGFkdmFudGFnZSBvZiBrLWZvbGQgQ1YgaXMgdGhhdCBpdCBvZnRlbiBnaXZlcyBtb3JlIGFjY3VyYXRlIGVzdGltYXRlcyBvZiB0aGUgdGVzdCBlcnJvciByYXRlIHRoYW4gZG9lcyBMT09DVi4gVGhpcyBoYXMgdG8gZG8gd2l0aCBhIGJpYXMtdmFyaWFuY2UgdHJhZGUtb2ZmLgoKVGhlIHZhbGlkYXRpb24gc2V0IGFwcHJvYWNoIGNhbiBsZWFkIHRvIG92ZXJlc3RpbWF0ZXMgb2YgdGhlIHRlc3QgZXJyb3IgcmF0ZSwgc2luY2UgaW4gdGhpcyBhcHByb2FjaCB0aGUgdHJhaW5pbmcgc2V0IHVzZWQgdG8gZml0IHRoZSBzdGF0aXN0aWNhbCBsZWFybmluZyBtZXRob2QgY29udGFpbnMgb25seSBoYWxmIHRoZSBvYnNlcnZhdGlvbnMgb2YgdGhlIGVudGlyZSBkYXRhIHNldC4gVXNpbmcgdGhpcyBsb2dpYywgaXQgaXMgbm90IGhhcmQgdG8gc2VlIHRoYXQgTE9PQ1Ygd2lsbCBnaXZlIGFwcHJveGltYXRlbHkgdW5iaWFzZWQgZXN0aW1hdGVzIG9mIHRoZSB0ZXN0IGVycm9yLCBzaW5jZSBlYWNoIHRyYWluaW5nIHNldCBjb250YWlucyAkbi0xJCBvYnNlcnZhdGlvbnMsIHdoaWNoIGlzIGFsbW9zdCBhcyBtYW55IGFzIHRoZSBudW1iZXIgb2Ygb2JzZXJ2YXRpb25zIGluIHRoZSBmdWxsIGRhdGEgc2V0LiBQZXJmb3JtaW5nIGstZm9sZCBDViB3aXRoICRrPTUkIG9yICRrPTEwJCB3aWxsIGxlYWQgdG8gYW4gaW50ZXJtZWRpYXRlIGxldmVsIG9mIGJpYXMgc2luY2UgZWFjaCB0cmFpbmluZyBzZXQgY29udGFpbnMgJChrLTEpbi9rJCBvYnNlcnZhdGlvbnMgLSBmZXdlciB0aGFuIGluIHRoZSBMT09DViBhcHByb2FjaCwgYnV0IG1vcmUgdGhhbiBpbiB0aGUgdmFsaWRhdGlvbiBzZXQgYXBwcm9hY2guIFRoZXJlZm9yZSwgZnJvbSB0aGUgcGVyc3BlY3RpdmUgb2YgYmlhcyByZWR1Y3Rpb24sIGl0IGlzIGNsZWFyIHRoYXQgdGhlIExPT0NWIGFwcHJvYWNoIGlzIHByZWZlcnJlZCB0byBrLWZvbGQgQ1YuCgpIb3dldmVyLCB3ZSBrbm93IHRoYXQgdGhlcmUncyBhIHRyYWRlLW9mZiBiZXR3ZWVuIGJpYXMgYW5kIHZhcmlhbmNlLCBhbmQgaXQgdHVybnMgb3V0IHRoYXQgTE9PQ1YgaGFzIGhpZ2hlciB2YXJpYW5jZSB0aGFuIGRvZXMgay1mb2xkIENWIHdpdGggJGs8biQuIFNpbmNlIHRoZSBtZWFuIG9mIG1hbnkgaGlnaGx5IGNvcnJlbGF0ZWQgcXVhbnRpdGllcyBoYXMgaGlnaGVyIHZhcmlhbmNlIHRoYW4gZG9lcyB0aGUgbWVhbiBvZiBtYW55IHF1YW50aXRpZXMgdGhhdCBhcmUgbm90IGFzIGhpZ2hseSBjb3JyZWxhdGVkLCB0aGUgdGVzdCBlcnJvciBlc3RpbWF0ZSByZXN1bHRpbmcgZnJvbSBMT09DViB0ZW5kcyB0byBoYXZlIGhpZ2hlciB2YXJpYW5jZSB0aGFuIGRvZXMgdGhlIHRlc3QgZXJyb3IgZXN0aW1hdGUgcmVzdWx0aW5nIGZyb20gay1mb2xkIENWLgoKVG8gc3VtbWFyaXplLCB0aGVyZSBpcyBhIGJpYXMtdmFyaWFuY2UgdHJhZGUtb2ZmIGFzc29jaWF0ZWQgd2l0aCB0aGUgY2hvaWNlIG9mIGsgaW4gay1mb2xkIGNyb3NzLXZhbGlkYXRpb24uIFR5cGljYWxseSwgZ2l2ZW4gdGhlc2UgY29uc2lkZXJhdGlvbnMsIG9uZSBwZXJmb3JtcyBrLWZvbGQgY3Jvc3MtdmFsaWRhdGlvbiB1c2luZyBrID0gNSBvciBrID0gMTAsIGFzIHRoZXNlIHZhbHVlcyBoYXZlIGJlZW4gc2hvd24gZW1waXJpY2FsbHkgdG8geWllbGQgdGVzdCBlcnJvciByYXRlIGVzdGltYXRlcyB0aGF0IHN1ZmZlciBuZWl0aGVyIGZyb20gZXhjZXNzaXZlbHkgaGlnaCBiaWFzIG5vciBmcm9tIHZlcnkgaGlnaCB2YXJpYW5jZS4KCiMjIENyb3NzLVZhbGlkYXRpb24gb24gQ2xhc3NpZmljYXRpb24gUHJvYmxlbXMKCkluIHRoaXMgc2V0dGluZywgY3Jvc3MtdmFsaWRhdGlvbiB3b3JrcyBqdXN0IGFzIGRlc2NyaWJlZCBlYXJsaWVyIGluIHRoaXMgY2hhcHRlciwgZXhjZXB0IHRoYXQgcmF0aGVyIHRoYW4gdXNpbmcgTVNFIHRvIHF1YW50aWZ5IHRlc3QgZXJyb3IsIHdlIGluc3RlYWQgdXNlIHRoZSB0aGUgbnVtYmVyIG9mIG1pc2NsYXNzaWZpZWQgb2JzZXJ2YXRpb25zLiBGb3IgaW5zdGFuY2UsIGluIHRoZSBjbGFzc2lmaWNhdGlvbiBzZXR0aW5nLCB0aGUgTE9PQ1YgZXJyb3IgcmF0ZSB0YWtlcyB0aGUgZm9ybQoKJCRDVl97KG4pfSA9IFxmcmFjezF9e259IFxzdW1ebl97aT0xfSBFcnJfaSAkJAp3aGVyZSAkRXJyX2kgPSBJKHlfaSBcbmVxIFxoYXR7eV9pfSkkLgoKCiMgVGhlIEJvb3RzdHJhcAoKVGhlICpib290c3RyYXAqIGlzIGEgd2lkZWx5IGFwcGxpY2FibGUgYW5kIGV4dHJlbWVseSBwb3dlcmZ1bCBzdGF0aXN0aWNhbCB0b29sIHRoYXQgY2FuIGJlIHVzZWQgdG8gcXVhbnRpZnkgdGhlIHVuY2VydGFpbnR5IGFzc29jaWF0ZWQgd2l0aCBhIGdpdmVuIGVzdGltYXRvciBvciBzdGF0aXN0aWNhbCBsZWFybmluZyBtZXRob2QuIEFzIGEgc2ltcGxlIGV4YW1wbGUsIHRoZSBib290c3RyYXAgY2FuIGJlIHVzZWQgdG8gZXN0aW1hdGUgdGhlIHN0YW5kYXJkIGVycm9ycyBvZiB0aGUgY29lZmZpY2llbnRzIGZyb20gYSBsaW5lYXIgcmVncmVzc2lvbiBmaXQuIEluIHRoZSBzcGVjaWZpYyBjYXNlIG9mIGxpbmVhciByZWdyZXNzaW9uLCB0aGlzIGlzIG5vdCBwYXJ0aWN1bGFybHkgdXNlZnVsLCBzaW5jZSB3ZSBzYXcgaW4gQ2hhcHRlciAzIHRoYXQgc3RhbmRhcmQgc3RhdGlzdGljYWwgc29mdHdhcmUgc3VjaCBhcyBSIG91dHB1dHMgc3VjaCBzdGFuZGFyZCBlcnJvcnMgYXV0b21hdGljYWxseS4gSG93ZXZlciwgdGhlIHBvd2VyIG9mIHRoZSBib290c3RyYXAgbGllcyBpbiB0aGUgZmFjdCB0aGF0IGl0IGNhbiBiZSBlYXNpbHkgYXBwbGllZCB0byBhIHdpZGUgcmFuZ2Ugb2Ygc3RhdGlzdGljYWwgbGVhcm5pbmcgbWV0aG9kcywgaW5jbHVkaW5nIHNvbWUgZm9yIHdoaWNoIGEgbWVhc3VyZSBvZiB2YXJpLSBhYmlsaXR5IGlzIG90aGVyd2lzZSBkaWZmaWN1bHQgdG8gb2J0YWluIGFuZCBpcyBub3QgYXV0b21hdGljYWxseSBvdXRwdXQgYnkgc3RhdGlzdGljYWwgc29mdHdhcmUuIAoKdGhlIGJvb3RzdHJhcCBhcHByb2FjaCBhbGxvd3MgdXMgdG8gdXNlIGEgY29tcHV0ZXIgdG8gZW11bGF0ZSB0aGUgcHJvY2VzcyBvZiBvYnRhaW5pbmcgbmV3IHNhbXBsZSBzZXRzLCBzbyB0aGF0IHdlIGNhbiBlc3RpbWF0ZSB0aGUgdmFyaWFiaWxpdHkgb2YgJFxoYXR7XGFscGhhfSQgd2l0aG91dCBnZW5lcmF0aW5nIGFkZGl0aW9uYWwgc2FtcGxlcy4gUmF0aGVyIHRoYW4gcmVwZWF0ZWRseSBvYnRhaW5pbmcgaW5kZXBlbmRlbnQgZGF0YSBzZXRzIGZyb20gdGhlIHBvcHVsYXRpb24sIHdlIGluc3RlYWQgb2J0YWluIGRpc3RpbmN0IGRhdGEgc2V0cyBieSByZXBlYXRlZGx5IHNhbXBsZSBvYnNlcnZhdGlvbnMgKipmcm9tIHRoZSBvcmlnaW5hbCBkYXRhIHNldCoqLiAKCldlIHJhbmRvbWx5IHNlbGVjdCAkbiQgb2JzZXJ2YXRpb25zIGZyb20gdGhlIGRhdGEgc2V0IGluIG9yZGVyIHRvIHByb2R1Y2UgYSBib290c3RyYXAgZGF0YSBzZXQsICRaXnsqMX0kLiBUaGUgc2FtcGxpbmcgaXMgcGVyZm9ybWVkIHdpdGggKnJlcGxhY2VtZW50Kiwgd2hpY2ggbWVhbnMgdGhhdCB0aGUgc2FtZSBvYnNlcnZhdGlvbiBjYW4gb2NjdXIgbW9yZSB0aGFuIG9uY2UgaW4gdGhlIGJvb3RzdHJhcCBkYXRhIHNldC4gV2UgY2FuIHVzZSAkWl57KjF9JCB0byBwcm9kdWNlIGEgbmV3IGJvb3RzdHJhcCBlc3RpbWF0ZSBmb3IgJFxhbHBoYSQsIHdoaWNoIHdlIGNhbGwgJFxoYXR7XGFscGhhXnsqMX19JCwgVGhpcyBwcm9jZWR1cmUgaXMgcmVwZWF0ZWQgJEIkIHRpbWVzIGZvciBzb21lIGxhcmdlIHZhbHVlIG9mICRCJCwgaW4gb3JkZXIgdG8gcHJvZHVjZSAkQiQgZGlmZmVyZW50IGJvb3RzdHJhcCBkYXRhIHNldHMsICRaXnsqMX0sWl57KjJ9LC4uLlpeeypCfSQsIGFuZCB0aGVpciBjb3JyZXNwb25kaW5nICRcYWxwaGEkIGVzdGltYXRlcy4gV2UgY2FuIGNvbXB1dGUgdGhlIHN0YW5kYXJkIGVycm9yIG9mIHRoZXNlIGJvb3RzdHJhcCBlc3N0aW1hdGVzIHVzaW5nIHRoZSBmb3JtdWxhCgokJFNFX3tCfShcaGF0e1xhbHBoYX0pID0gXHNxcnR7XGZyYWN7MX17Qi0xfSBcc3VtXkJfe3I9MX0gXGxlZnQoICBcaGF0e1xhbHBoYX1eeypyfSAtIFxmcmFjezF9e0J9IFxzdW1eQl97cic9MX0gXGhhdHtcYWxwaGF9Xnsqcid9IFxyaWdodCApXjJ9JCQKClRoaXMgc2VydmVzIGFzIGFuIGVzdGltYXRlIG9mIHRoZSBzdGFuZGFyZCBlcnJvciBvZiAkXGhhdHtcYWxwaGF9JCBlc3RpYW10ZWQgZnJvbSB0aGUgb3JpZ2luYWwgZGF0YSBzZXQuCgojIExhYjogQ3Jvc3MtVmFsaWRhdGlvbiBhbmQgdGhlIEJvb3RzdHJhcA==</div>
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.4725  -0.1444  -0.0574  -0.0211   3.7245  
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -1.154e+01  4.348e-01 -26.545  &lt; 2e-16 ***
+income       2.081e-05  4.985e-06   4.174 2.99e-05 ***
+balance      5.647e-03  2.274e-04  24.836  &lt; 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 2920.6  on 9999  degrees of freedom
+Residual deviance: 1579.0  on 9997  degrees of freedom
+AIC: 1585
+
+Number of Fisher Scoring iterations: 8</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2IpXG4jaSlcbnRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpXG4jaWkpXG5nbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbiNpaWkpXG5nbG0ucHJvYnM8LXByZWRpY3QoZ2xtLmZpdDEsdHlwZT1cInJlc3BvbnNlXCIpXG5nbG0ucHJlZDwtcmVwKFwiTm9cIiw1MDAwKVxuZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtXCJZZXNcIlxudGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pXG5gYGAifQ== -->
+<pre class="r"><code>#b)
+#i)
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+#ii)
+glm.fit1&lt;-glm(default~income+balance, data=Default, family = binomial, subset=train)
+#iii)
+glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+glm.pred&lt;-rep(&quot;No&quot;,5000)
+glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+table(glm.pred,default[train])</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICBcbmdsbS5wcmVkICAgTm8gIFllc1xuICAgICBObyAgNDgxNyAgMTA1XG4gICAgIFllcyAgIDE3ICAgNjFcbiJ9 -->
+<pre><code>        
+glm.pred   No  Yes
+     No  4817  105
+     Yes   17   61</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbihkZWZhdWx0PT1nbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>mean(default==glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuOTUyM1xuIn0= -->
+<pre><code>[1] 0.9523</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2l2KVxuKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>#iv)
+(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI0NFxuIn0= -->
+<pre><code>[1] 0.0244</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2MpXG4jMXN0IHJlcGV0aXRpb25cbnRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpXG5nbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbmdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPVwicmVzcG9uc2VcIilcbmdsbS5wcmVkPC1yZXAoXCJOb1wiLDUwMDApXG5nbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC1cIlllc1wiXG50YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlcbmBgYCJ9 -->
+<pre class="r"><code>#c)
+#1st repetition
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1&lt;-glm(default~income+balance, data=Default, family = binomial, subset=train)
+glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+glm.pred&lt;-rep(&quot;No&quot;,5000)
+glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+table(glm.pred,default[train])</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICBcbmdsbS5wcmVkICAgTm8gIFllc1xuICAgICBObyAgNDgxMCAgMTI1XG4gICAgIFllcyAgIDIwICAgNDVcbiJ9 -->
+<pre><code>        
+glm.pred   No  Yes
+     No  4810  125
+     Yes   20   45</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbihkZWZhdWx0PT1nbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>mean(default==glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuOTU0M1xuIn0= -->
+<pre><code>[1] 0.9543</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI5XG4ifQ== -->
+<pre><code>[1] 0.029</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2MpXG4jMm5kIHJlcGV0aXRpb25cbnRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpXG5nbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbmdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPVwicmVzcG9uc2VcIilcbmdsbS5wcmVkPC1yZXAoXCJOb1wiLDUwMDApXG5nbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC1cIlllc1wiXG50YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlcbmBgYCJ9 -->
+<pre class="r"><code>#c)
+#2nd repetition
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1&lt;-glm(default~income+balance, data=Default, family = binomial, subset=train)
+glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+glm.pred&lt;-rep(&quot;No&quot;,5000)
+glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+table(glm.pred,default[train])</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICBcbmdsbS5wcmVkICAgTm8gIFllc1xuICAgICBObyAgNDgxNSAgMTA4XG4gICAgIFllcyAgIDE4ICAgNTlcbiJ9 -->
+<pre><code>        
+glm.pred   No  Yes
+     No  4815  108
+     Yes   18   59</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbihkZWZhdWx0PT1nbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>mean(default==glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuOTUzM1xuIn0= -->
+<pre><code>[1] 0.9533</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI1MlxuIn0= -->
+<pre><code>[1] 0.0252</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2MpXG4jM3JkIHJlcGV0aXRpb25cbnRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpXG5nbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbmdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPVwicmVzcG9uc2VcIilcbmdsbS5wcmVkPC1yZXAoXCJOb1wiLDUwMDApXG5nbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC1cIlllc1wiXG50YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlcbmBgYCJ9 -->
+<pre class="r"><code>#c)
+#3rd repetition
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1&lt;-glm(default~income+balance, data=Default, family = binomial, subset=train)
+glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+glm.pred&lt;-rep(&quot;No&quot;,5000)
+glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+table(glm.pred,default[train])</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICBcbmdsbS5wcmVkICAgTm8gIFllc1xuICAgICBObyAgNDgxNiAgMTA4XG4gICAgIFllcyAgIDIxICAgNTVcbiJ9 -->
+<pre><code>        
+glm.pred   No  Yes
+     No  4816  108
+     Yes   21   55</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbihkZWZhdWx0PT1nbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>mean(default==glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuOTUyMVxuIn0= -->
+<pre><code>[1] 0.9521</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI1OFxuIn0= -->
+<pre><code>[1] 0.0258</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NvbWUgdmFyaWFiaWxpdHksIGxldHMgY3JlYXRlIGEgbWVhbiBvZiB0aGlzIGZvciA1MCByZXBldGl0aW9ucyBmb3IgZnVuXG5tZWFuLnZhbGlkYXRpb24gPSByZXAoMSw1MClcbmZvcihpIGluIDE6NTApe1xuICB0cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKVxuICBnbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbiAgZ2xtLnByb2JzPC1wcmVkaWN0KGdsbS5maXQxLHR5cGU9XCJyZXNwb25zZVwiKVxuICBnbG0ucHJlZDwtcmVwKFwiTm9cIiw1MDAwKVxuICBnbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC1cIlllc1wiXG4gIHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVxuICBtZWFuKGRlZmF1bHQ9PWdsbS5wcmVkKVxuICBtZWFuLnZhbGlkYXRpb25baV08LSh0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbM10rdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzJdKS9sZW5ndGgoZ2xtLnByZWQpXG59XG5tZWFuKG1lYW4udmFsaWRhdGlvbilcbmBgYCJ9 -->
+<pre class="r"><code>#some variability, lets create a mean of this for 50 repetitions for fun
+mean.validation = rep(1,50)
+for(i in 1:50){
+  train=sample(dim(Default)[1],dim(Default)[1]/2)
+  glm.fit1&lt;-glm(default~income+balance, data=Default, family = binomial, subset=train)
+  glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+  glm.pred&lt;-rep(&quot;No&quot;,5000)
+  glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+  table(glm.pred,default[train])
+  mean(default==glm.pred)
+  mean.validation[i]&lt;-(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+}
+mean(mean.validation)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI2NTY4XG4ifQ== -->
+<pre><code>[1] 0.026568</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbi52YWxpZGF0aW9uID0gcmVwKDEsNTAwKVxuZm9yKGkgaW4gMTo1MDApe1xuICB0cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKVxuICBnbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbiAgZ2xtLnByb2JzPC1wcmVkaWN0KGdsbS5maXQxLHR5cGU9XCJyZXNwb25zZVwiKVxuICBnbG0ucHJlZDwtcmVwKFwiTm9cIiw1MDAwKVxuICBnbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC1cIlllc1wiXG4gIHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVxuICBtZWFuKGRlZmF1bHQ9PWdsbS5wcmVkKVxuICBtZWFuLnZhbGlkYXRpb25baV08LSh0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbM10rdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzJdKS9sZW5ndGgoZ2xtLnByZWQpXG59XG5tZWFuKG1lYW4udmFsaWRhdGlvbilcbmBgYCJ9 -->
+<pre class="r"><code>mean.validation = rep(1,500)
+for(i in 1:500){
+  train=sample(dim(Default)[1],dim(Default)[1]/2)
+  glm.fit1&lt;-glm(default~income+balance, data=Default, family = binomial, subset=train)
+  glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+  glm.pred&lt;-rep(&quot;No&quot;,5000)
+  glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+  table(glm.pred,default[train])
+  mean(default==glm.pred)
+  mean.validation[i]&lt;-(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+}
+mean(mean.validation)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI2NTU0NFxuIn0= -->
+<pre><code>[1] 0.0265544</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2QpXG50cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKVxuZ2xtLmZpdDE8LWdsbShkZWZhdWx0fmluY29tZStiYWxhbmNlK3N0dWRlbnQsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbilcbmdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPVwicmVzcG9uc2VcIilcbmdsbS5wcmVkPC1yZXAoXCJOb1wiLDUwMDApXG5nbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC1cIlllc1wiXG50YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlcbmBgYCJ9 -->
+<pre class="r"><code>#d)
+train=sample(dim(Default)[1],dim(Default)[1]/2)
+glm.fit1&lt;-glm(default~income+balance+student, data=Default, family = binomial, subset=train)
+glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+glm.pred&lt;-rep(&quot;No&quot;,5000)
+glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+table(glm.pred,default[train])</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICBcbmdsbS5wcmVkICAgTm8gIFllc1xuICAgICBObyAgNDgyMSAgMTA3XG4gICAgIFllcyAgIDIxICAgNTFcbiJ9 -->
+<pre><code>        
+glm.pred   No  Yes
+     No  4821  107
+     Yes   21   51</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubWVhbihkZWZhdWx0PT1nbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>mean(default==glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuOTUzMVxuIn0= -->
+<pre><code>[1] 0.9531</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZClcbmBgYCJ9 -->
+<pre class="r"><code>(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI1NlxuIn0= -->
+<pre><code>[1] 0.0256</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2Z1Y2sgaXQgbGV0cyBkbyB0aGlzXG5tZWFuLnZhbGlkYXRpb24gPSByZXAoMSw1MDApXG5mb3IoaSBpbiAxOjUwMCl7XG4gIHRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpXG4gIGdsbS5maXQxPC1nbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZStzdHVkZW50LCBkYXRhPURlZmF1bHQsIGZhbWlseSA9IGJpbm9taWFsLCBzdWJzZXQ9dHJhaW4pXG4gIGdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPVwicmVzcG9uc2VcIilcbiAgZ2xtLnByZWQ8LXJlcChcIk5vXCIsNTAwMClcbiAgZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtXCJZZXNcIlxuICB0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlcbiAgbWVhbihkZWZhdWx0PT1nbG0ucHJlZClcbiAgbWVhbi52YWxpZGF0aW9uW2ldPC0odGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzNdK3RhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVsyXSkvbGVuZ3RoKGdsbS5wcmVkKVxufVxubWVhbihtZWFuLnZhbGlkYXRpb24pXG5gYGAifQ== -->
+<pre class="r"><code>#fuck it lets do this
+mean.validation = rep(1,500)
+for(i in 1:500){
+  train=sample(dim(Default)[1],dim(Default)[1]/2)
+  glm.fit1&lt;-glm(default~income+balance+student, data=Default, family = binomial, subset=train)
+  glm.probs&lt;-predict(glm.fit1,type=&quot;response&quot;)
+  glm.pred&lt;-rep(&quot;No&quot;,5000)
+  glm.pred[glm.probs&gt;.5]&lt;-&quot;Yes&quot;
+  table(glm.pred,default[train])
+  mean(default==glm.pred)
+  mean.validation[i]&lt;-(table(glm.pred,default[train])[3]+table(glm.pred,default[train])[2])/length(glm.pred)
+}
+mean(mean.validation)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDI2NjQ0NFxuIn0= -->
+<pre><code>[1] 0.0266444</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NsaWdodGx5IHdvcnNlLCBub3QgdGhhdCBtdWNoXG5gYGAifQ== -->
+<pre class="r"><code>#slightly worse, not that much</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p><strong>6</strong></p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2EpXG5zZXQuc2VlZCgxKVxuZ2xtLmZpdDwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwpXG5zdW1tYXJ5KGdsbS5maXQpJGNvZWZmaWNpZW50c1xuYGBgIn0= -->
+<pre class="r"><code>#a)
+set.seed(1)
+glm.fit&lt;-glm(default~income+balance, data=Default, family = binomial)
+summary(glm.fit)$coefficients</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgICBFc3RpbWF0ZSAgIFN0ZC4gRXJyb3IgICAgeiB2YWx1ZSAgICAgIFByKD58enwpXG4oSW50ZXJjZXB0KSAtMS4xNTQwNDdlKzAxIDQuMzQ3NTY0ZS0wMSAtMjYuNTQ0NjgwIDIuOTU4MzU1ZS0xNTVcbmluY29tZSAgICAgICAyLjA4MDg5OGUtMDUgNC45ODUxNjdlLTA2ICAgNC4xNzQxNzggIDIuOTkwNjM4ZS0wNVxuYmFsYW5jZSAgICAgIDUuNjQ3MTAzZS0wMyAyLjI3MzczMWUtMDQgIDI0LjgzNjI4MCAzLjYzODEyMGUtMTM2XG4ifQ== -->
+<pre><code>                 Estimate   Std. Error    z value      Pr(&gt;|z|)
+(Intercept) -1.154047e+01 4.347564e-01 -26.544680 2.958355e-155
+income       2.080898e-05 4.985167e-06   4.174178  2.990638e-05
+balance      5.647103e-03 2.273731e-04  24.836280 3.638120e-136</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2IpXG5ib290LmZuIDwtZnVuY3Rpb24oZGF0YSxpbmRleCl7XG4gIHJldHVybihzdW1tYXJ5KGdsbShkZWZhdWx0fmluY29tZStiYWxhbmNlLCBkYXRhPWRhdGEsIGZhbWlseSA9IGJpbm9taWFsLHN1YnNldD1pbmRleCkpJGNvZWZmaWNpZW50c1ssMl0pXG59XG5gYGAifQ== -->
+<pre class="r"><code>#b)
+boot.fn &lt;-function(data,index){
+  return(summary(glm(default~income+balance, data=data, family = binomial,subset=index))$coefficients[,2])
+}</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2MpXG5ib290KERlZmF1bHQsYm9vdC5mbixSPTEwMDApXG5gYGAifQ== -->
+<pre class="r"><code>#c)
+boot(Default,boot.fn,R=1000)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5PUkRJTkFSWSBOT05QQVJBTUVUUklDIEJPT1RTVFJBUFxuXG5cbkNhbGw6XG5ib290KGRhdGEgPSBEZWZhdWx0LCBzdGF0aXN0aWMgPSBib290LmZuLCBSID0gMTAwMClcblxuXG5Cb290c3RyYXAgU3RhdGlzdGljcyA6XG4gICAgICAgIG9yaWdpbmFsICAgICAgIGJpYXMgICAgIHN0ZC4gZXJyb3JcbnQxKiA0LjM0NzU2NGUtMDEgMS4wOTU5ODNlLTAzIDIuMTUwODI0ZS0wMlxudDIqIDQuOTg1MTY3ZS0wNiA5LjI0MjY3N2UtMDkgMS40Mjk3NjdlLTA3XG50MyogMi4yNzM3MzFlLTA0IDUuMzc4NTE3ZS0wNyAxLjEwOTQ0OWUtMDVcbiJ9 -->
+<pre><code>
+ORDINARY NONPARAMETRIC BOOTSTRAP
+
+
+Call:
+boot(data = Default, statistic = boot.fn, R = 1000)
+
+
+Bootstrap Statistics :
+        original       bias     std. error
+t1* 4.347564e-01 1.095983e-03 2.150824e-02
+t2* 4.985167e-06 9.242677e-09 1.429767e-07
+t3* 2.273731e-04 5.378517e-07 1.109449e-05</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p><strong>7</strong></p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeShwcmVkLnJlcylcblxuYGBgIn0= -->
+<pre class="r"><code>summary(pred.res)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgTWluLiAxc3QgUXUuICBNZWRpYW4gICAgTWVhbiAzcmQgUXUuICAgIE1heC4gXG4gICAgICAxICAgICAgIDEgICAgICAgMSAgICAgICAxICAgICAgIDEgICAgICAgMSBcbiJ9 -->
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      1       1       1       1       1       1 </code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>** 8 **</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeShnbG0oeX5wb2x5KHgsNCkpKVxuXG5gYGAifQ== -->
+<pre class="r"><code>summary(glm(y~poly(x,4)))
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5DYWxsOlxuZ2xtKGZvcm11bGEgPSB5IH4gcG9seSh4LCA0KSlcblxuRGV2aWFuY2UgUmVzaWR1YWxzOiBcbiAgICAgTWluICAgICAgICAxUSAgICBNZWRpYW4gICAgICAgIDNRICAgICAgIE1heCAgXG4tMi40MjEyMiAgLTAuNjA5MzkgIC0wLjAzNDk4ICAgMC42NjY1OSAgIDIuMTY2MjQgIFxuXG5Db2VmZmljaWVudHM6XG4gICAgICAgICAgICBFc3RpbWF0ZSBTdGQuIEVycm9yIHQgdmFsdWUgUHIoPnx0fCkgICAgXG4oSW50ZXJjZXB0KSAgLTIuNzk1MyAgICAgMC4wOTU5IC0yOS4xNDcgIDwgMmUtMTYgKioqXG5wb2x5KHgsIDQpMSAgIDMuMDU3MiAgICAgMC45NTkwICAgMy4xODggIDAuMDAxOTQgKiogXG5wb2x5KHgsIDQpMiAtNDEuNTk0MyAgICAgMC45NTkwIC00My4zNzEgIDwgMmUtMTYgKioqXG5wb2x5KHgsIDQpMyAgLTEuMjY2NSAgICAgMC45NTkwICAtMS4zMjEgIDAuMTg5ODIgICAgXG5wb2x5KHgsIDQpNCAgLTEuNTYwMiAgICAgMC45NTkwICAtMS42MjcgIDAuMTA3MDcgICAgXG4tLS1cblNpZ25pZi4gY29kZXM6ICAwIOKAmCoqKuKAmSAwLjAwMSDigJgqKuKAmSAwLjAxIOKAmCrigJkgMC4wNSDigJgu4oCZIDAuMSDigJgg4oCZIDFcblxuKERpc3BlcnNpb24gcGFyYW1ldGVyIGZvciBnYXVzc2lhbiBmYW1pbHkgdGFrZW4gdG8gYmUgMC45MTk3NjUyKVxuXG4gICAgTnVsbCBkZXZpYW5jZTogMTgzMC44NDQgIG9uIDk5ICBkZWdyZWVzIG9mIGZyZWVkb21cblJlc2lkdWFsIGRldmlhbmNlOiAgIDg3LjM3OCAgb24gOTUgIGRlZ3JlZXMgb2YgZnJlZWRvbVxuQUlDOiAyODIuMjlcblxuTnVtYmVyIG9mIEZpc2hlciBTY29yaW5nIGl0ZXJhdGlvbnM6IDJcbiJ9 -->
+<pre><code>
+Call:
+glm(formula = y ~ poly(x, 4))
+
+Deviance Residuals: 
+     Min        1Q    Median        3Q       Max  
+-2.42122  -0.60939  -0.03498   0.66659   2.16624  
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  -2.7953     0.0959 -29.147  &lt; 2e-16 ***
+poly(x, 4)1   3.0572     0.9590   3.188  0.00194 ** 
+poly(x, 4)2 -41.5943     0.9590 -43.371  &lt; 2e-16 ***
+poly(x, 4)3  -1.2665     0.9590  -1.321  0.18982    
+poly(x, 4)4  -1.5602     0.9590  -1.627  0.10707    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for gaussian family taken to be 0.9197652)
+
+    Null deviance: 1830.844  on 99  degrees of freedom
+Residual deviance:   87.378  on 95  degrees of freedom
+AIC: 282.29
+
+Number of Fisher Scoring iterations: 2</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>** 9 **</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeShCb3N0b24pXG5cbmBgYCJ9 -->
+<pre class="r"><code>summary(Boston)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgY3JpbSAgICAgICAgICAgICAgICB6biAgICAgICAgICAgICBpbmR1cyAgICAgICAgICAgIGNoYXMgICAgICAgICAgICAgIG5veCAgICAgICAgICAgICAgIHJtICAgICAgIFxuIE1pbi4gICA6IDAuMDA2MzIgICBNaW4uICAgOiAgMC4wMCAgIE1pbi4gICA6IDAuNDYgICBNaW4uICAgOjAuMDAwMDAgICBNaW4uICAgOjAuMzg1MCAgIE1pbi4gICA6My41NjEgIFxuIDFzdCBRdS46IDAuMDgyMDQgICAxc3QgUXUuOiAgMC4wMCAgIDFzdCBRdS46IDUuMTkgICAxc3QgUXUuOjAuMDAwMDAgICAxc3QgUXUuOjAuNDQ5MCAgIDFzdCBRdS46NS44ODYgIFxuIE1lZGlhbiA6IDAuMjU2NTEgICBNZWRpYW4gOiAgMC4wMCAgIE1lZGlhbiA6IDkuNjkgICBNZWRpYW4gOjAuMDAwMDAgICBNZWRpYW4gOjAuNTM4MCAgIE1lZGlhbiA6Ni4yMDggIFxuIE1lYW4gICA6IDMuNjEzNTIgICBNZWFuICAgOiAxMS4zNiAgIE1lYW4gICA6MTEuMTQgICBNZWFuICAgOjAuMDY5MTcgICBNZWFuICAgOjAuNTU0NyAgIE1lYW4gICA6Ni4yODUgIFxuIDNyZCBRdS46IDMuNjc3MDggICAzcmQgUXUuOiAxMi41MCAgIDNyZCBRdS46MTguMTAgICAzcmQgUXUuOjAuMDAwMDAgICAzcmQgUXUuOjAuNjI0MCAgIDNyZCBRdS46Ni42MjMgIFxuIE1heC4gICA6ODguOTc2MjAgICBNYXguICAgOjEwMC4wMCAgIE1heC4gICA6MjcuNzQgICBNYXguICAgOjEuMDAwMDAgICBNYXguICAgOjAuODcxMCAgIE1heC4gICA6OC43ODAgIFxuICAgICAgYWdlICAgICAgICAgICAgICBkaXMgICAgICAgICAgICAgIHJhZCAgICAgICAgICAgICAgdGF4ICAgICAgICAgICBwdHJhdGlvICAgICAgICAgIGJsYWNrICAgICAgIFxuIE1pbi4gICA6ICAyLjkwICAgTWluLiAgIDogMS4xMzAgICBNaW4uICAgOiAxLjAwMCAgIE1pbi4gICA6MTg3LjAgICBNaW4uICAgOjEyLjYwICAgTWluLiAgIDogIDAuMzIgIFxuIDFzdCBRdS46IDQ1LjAyICAgMXN0IFF1LjogMi4xMDAgICAxc3QgUXUuOiA0LjAwMCAgIDFzdCBRdS46Mjc5LjAgICAxc3QgUXUuOjE3LjQwICAgMXN0IFF1LjozNzUuMzggIFxuIE1lZGlhbiA6IDc3LjUwICAgTWVkaWFuIDogMy4yMDcgICBNZWRpYW4gOiA1LjAwMCAgIE1lZGlhbiA6MzMwLjAgICBNZWRpYW4gOjE5LjA1ICAgTWVkaWFuIDozOTEuNDQgIFxuIE1lYW4gICA6IDY4LjU3ICAgTWVhbiAgIDogMy43OTUgICBNZWFuICAgOiA5LjU0OSAgIE1lYW4gICA6NDA4LjIgICBNZWFuICAgOjE4LjQ2ICAgTWVhbiAgIDozNTYuNjcgIFxuIDNyZCBRdS46IDk0LjA4ICAgM3JkIFF1LjogNS4xODggICAzcmQgUXUuOjI0LjAwMCAgIDNyZCBRdS46NjY2LjAgICAzcmQgUXUuOjIwLjIwICAgM3JkIFF1LjozOTYuMjMgIFxuIE1heC4gICA6MTAwLjAwICAgTWF4LiAgIDoxMi4xMjcgICBNYXguICAgOjI0LjAwMCAgIE1heC4gICA6NzExLjAgICBNYXguICAgOjIyLjAwICAgTWF4LiAgIDozOTYuOTAgIFxuICAgICBsc3RhdCAgICAgICAgICAgIG1lZHYgICAgICBcbiBNaW4uICAgOiAxLjczICAgTWluLiAgIDogNS4wMCAgXG4gMXN0IFF1LjogNi45NSAgIDFzdCBRdS46MTcuMDIgIFxuIE1lZGlhbiA6MTEuMzYgICBNZWRpYW4gOjIxLjIwICBcbiBNZWFuICAgOjEyLjY1ICAgTWVhbiAgIDoyMi41MyAgXG4gM3JkIFF1LjoxNi45NSAgIDNyZCBRdS46MjUuMDAgIFxuIE1heC4gICA6MzcuOTcgICBNYXguICAgOjUwLjAwICBcbiJ9 -->
+<pre><code>      crim                zn             indus            chas              nox               rm       
+ Min.   : 0.00632   Min.   :  0.00   Min.   : 0.46   Min.   :0.00000   Min.   :0.3850   Min.   :3.561  
+ 1st Qu.: 0.08204   1st Qu.:  0.00   1st Qu.: 5.19   1st Qu.:0.00000   1st Qu.:0.4490   1st Qu.:5.886  
+ Median : 0.25651   Median :  0.00   Median : 9.69   Median :0.00000   Median :0.5380   Median :6.208  
+ Mean   : 3.61352   Mean   : 11.36   Mean   :11.14   Mean   :0.06917   Mean   :0.5547   Mean   :6.285  
+ 3rd Qu.: 3.67708   3rd Qu.: 12.50   3rd Qu.:18.10   3rd Qu.:0.00000   3rd Qu.:0.6240   3rd Qu.:6.623  
+ Max.   :88.97620   Max.   :100.00   Max.   :27.74   Max.   :1.00000   Max.   :0.8710   Max.   :8.780  
+      age              dis              rad              tax           ptratio          black       
+ Min.   :  2.90   Min.   : 1.130   Min.   : 1.000   Min.   :187.0   Min.   :12.60   Min.   :  0.32  
+ 1st Qu.: 45.02   1st Qu.: 2.100   1st Qu.: 4.000   1st Qu.:279.0   1st Qu.:17.40   1st Qu.:375.38  
+ Median : 77.50   Median : 3.207   Median : 5.000   Median :330.0   Median :19.05   Median :391.44  
+ Mean   : 68.57   Mean   : 3.795   Mean   : 9.549   Mean   :408.2   Mean   :18.46   Mean   :356.67  
+ 3rd Qu.: 94.08   3rd Qu.: 5.188   3rd Qu.:24.000   3rd Qu.:666.0   3rd Qu.:20.20   3rd Qu.:396.23  
+ Max.   :100.00   Max.   :12.127   Max.   :24.000   Max.   :711.0   Max.   :22.00   Max.   :396.90  
+     lstat            medv      
+ Min.   : 1.73   Min.   : 5.00  
+ 1st Qu.: 6.95   1st Qu.:17.02  
+ Median :11.36   Median :21.20  
+ Mean   :12.65   Mean   :22.53  
+ 3rd Qu.:16.95   3rd Qu.:25.00  
+ Max.   :37.97   Max.   :50.00  </code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYm9vdChtZWR2LGJvb3QuZm4sMTAwMClcblxuYGBgIn0= -->
+<pre class="r"><code>boot(medv,boot.fn,1000)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5PUkRJTkFSWSBOT05QQVJBTUVUUklDIEJPT1RTVFJBUFxuXG5cbkNhbGw6XG5ib290KGRhdGEgPSBtZWR2LCBzdGF0aXN0aWMgPSBib290LmZuLCBSID0gMTAwMClcblxuXG5Cb290c3RyYXAgU3RhdGlzdGljcyA6XG4gICAgb3JpZ2luYWwgICAgICBiaWFzICAgIHN0ZC4gZXJyb3JcbnQxKiAyMi41MzI4MSAwLjAwNDI2MjQ1MSAgIDAuNDIxNjI3OFxuIn0= -->
+<pre><code>
+ORDINARY NONPARAMETRIC BOOTSTRAP
+
+
+Call:
+boot(data = medv, statistic = boot.fn, R = 1000)
+
+
+Bootstrap Statistics :
+    original      bias    std. error
+t1* 22.53281 0.004262451   0.4216278</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiQ2hhcHRlciA1IC0gUmVzYW1wbGluZyBNZXRob2RzIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDogZGVmYXVsdAogIGh0bWxfbm90ZWJvb2s6IGRlZmF1bHQKLS0tCgpgYGB7cn0Kc2V0LnNlZWQoMSkKbGlicmFyeShJU0xSKQpsaWJyYXJ5KGJvb3QpCmF0dGFjaChEZWZhdWx0KQpgYGAKCioqNSoqCgpgYGB7cn0KI2EpCmdsbS5maXQ8LWdsbShkZWZhdWx0fmluY29tZStiYWxhbmNlLCBkYXRhPURlZmF1bHQsIGZhbWlseSA9IGJpbm9taWFsKQpzdW1tYXJ5KGdsbS5maXQpCmBgYApgYGB7cn0KI2IpCiNpKQp0cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKQojaWkpCmdsbS5maXQxPC1nbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZSwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbCwgc3Vic2V0PXRyYWluKQojaWlpKQpnbG0ucHJvYnM8LXByZWRpY3QoZ2xtLmZpdDEsdHlwZT0icmVzcG9uc2UiKQpnbG0ucHJlZDwtcmVwKCJObyIsNTAwMCkKZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtIlllcyIKdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pCm1lYW4oZGVmYXVsdD09Z2xtLnByZWQpCiNpdikKKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZCkKYGBgCgpgYGB7cn0KI2MpCiMxc3QgcmVwZXRpdGlvbgp0cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKQpnbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsIHN1YnNldD10cmFpbikKZ2xtLnByb2JzPC1wcmVkaWN0KGdsbS5maXQxLHR5cGU9InJlc3BvbnNlIikKZ2xtLnByZWQ8LXJlcCgiTm8iLDUwMDApCmdsbS5wcmVkW2dsbS5wcm9icz4uNV08LSJZZXMiCnRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKQptZWFuKGRlZmF1bHQ9PWdsbS5wcmVkKQoodGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzNdK3RhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVsyXSkvbGVuZ3RoKGdsbS5wcmVkKQpgYGAKCmBgYHtyfQojYykKIzJuZCByZXBldGl0aW9uCnRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpCmdsbS5maXQxPC1nbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZSwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbCwgc3Vic2V0PXRyYWluKQpnbG0ucHJvYnM8LXByZWRpY3QoZ2xtLmZpdDEsdHlwZT0icmVzcG9uc2UiKQpnbG0ucHJlZDwtcmVwKCJObyIsNTAwMCkKZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtIlllcyIKdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pCm1lYW4oZGVmYXVsdD09Z2xtLnByZWQpCih0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbM10rdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzJdKS9sZW5ndGgoZ2xtLnByZWQpCmBgYAoKYGBge3J9CiNjKQojM3JkIHJlcGV0aXRpb24KdHJhaW49c2FtcGxlKGRpbShEZWZhdWx0KVsxXSxkaW0oRGVmYXVsdClbMV0vMikKZ2xtLmZpdDE8LWdsbShkZWZhdWx0fmluY29tZStiYWxhbmNlLCBkYXRhPURlZmF1bHQsIGZhbWlseSA9IGJpbm9taWFsLCBzdWJzZXQ9dHJhaW4pCmdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPSJyZXNwb25zZSIpCmdsbS5wcmVkPC1yZXAoIk5vIiw1MDAwKQpnbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC0iWWVzIgp0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSkKbWVhbihkZWZhdWx0PT1nbG0ucHJlZCkKKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZCkKYGBgCgpgYGB7cn0KI3NvbWUgdmFyaWFiaWxpdHksIGxldHMgY3JlYXRlIGEgbWVhbiBvZiB0aGlzIGZvciA1MCByZXBldGl0aW9ucyBmb3IgZnVuCm1lYW4udmFsaWRhdGlvbiA9IHJlcCgxLDUwKQpmb3IoaSBpbiAxOjUwKXsKICB0cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKQogIGdsbS5maXQxPC1nbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZSwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbCwgc3Vic2V0PXRyYWluKQogIGdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPSJyZXNwb25zZSIpCiAgZ2xtLnByZWQ8LXJlcCgiTm8iLDUwMDApCiAgZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtIlllcyIKICB0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSkKICBtZWFuKGRlZmF1bHQ9PWdsbS5wcmVkKQogIG1lYW4udmFsaWRhdGlvbltpXTwtKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZCkKfQptZWFuKG1lYW4udmFsaWRhdGlvbikKCm1lYW4udmFsaWRhdGlvbiA9IHJlcCgxLDUwMCkKZm9yKGkgaW4gMTo1MDApewogIHRyYWluPXNhbXBsZShkaW0oRGVmYXVsdClbMV0sZGltKERlZmF1bHQpWzFdLzIpCiAgZ2xtLmZpdDE8LWdsbShkZWZhdWx0fmluY29tZStiYWxhbmNlLCBkYXRhPURlZmF1bHQsIGZhbWlseSA9IGJpbm9taWFsLCBzdWJzZXQ9dHJhaW4pCiAgZ2xtLnByb2JzPC1wcmVkaWN0KGdsbS5maXQxLHR5cGU9InJlc3BvbnNlIikKICBnbG0ucHJlZDwtcmVwKCJObyIsNTAwMCkKICBnbG0ucHJlZFtnbG0ucHJvYnM+LjVdPC0iWWVzIgogIHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKQogIG1lYW4oZGVmYXVsdD09Z2xtLnByZWQpCiAgbWVhbi52YWxpZGF0aW9uW2ldPC0odGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzNdK3RhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVsyXSkvbGVuZ3RoKGdsbS5wcmVkKQp9Cm1lYW4obWVhbi52YWxpZGF0aW9uKQpgYGAKYGBge3J9CiNkKQp0cmFpbj1zYW1wbGUoZGltKERlZmF1bHQpWzFdLGRpbShEZWZhdWx0KVsxXS8yKQpnbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2Urc3R1ZGVudCwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbCwgc3Vic2V0PXRyYWluKQpnbG0ucHJvYnM8LXByZWRpY3QoZ2xtLmZpdDEsdHlwZT0icmVzcG9uc2UiKQpnbG0ucHJlZDwtcmVwKCJObyIsNTAwMCkKZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtIlllcyIKdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pCm1lYW4oZGVmYXVsdD09Z2xtLnByZWQpCih0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbM10rdGFibGUoZ2xtLnByZWQsZGVmYXVsdFt0cmFpbl0pWzJdKS9sZW5ndGgoZ2xtLnByZWQpCgojZnVjayBpdCBsZXRzIGRvIHRoaXMKbWVhbi52YWxpZGF0aW9uID0gcmVwKDEsNTAwKQpmb3IoaSBpbiAxOjUwMCl7CiAgdHJhaW49c2FtcGxlKGRpbShEZWZhdWx0KVsxXSxkaW0oRGVmYXVsdClbMV0vMikKICBnbG0uZml0MTwtZ2xtKGRlZmF1bHR+aW5jb21lK2JhbGFuY2Urc3R1ZGVudCwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbCwgc3Vic2V0PXRyYWluKQogIGdsbS5wcm9iczwtcHJlZGljdChnbG0uZml0MSx0eXBlPSJyZXNwb25zZSIpCiAgZ2xtLnByZWQ8LXJlcCgiTm8iLDUwMDApCiAgZ2xtLnByZWRbZ2xtLnByb2JzPi41XTwtIlllcyIKICB0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSkKICBtZWFuKGRlZmF1bHQ9PWdsbS5wcmVkKQogIG1lYW4udmFsaWRhdGlvbltpXTwtKHRhYmxlKGdsbS5wcmVkLGRlZmF1bHRbdHJhaW5dKVszXSt0YWJsZShnbG0ucHJlZCxkZWZhdWx0W3RyYWluXSlbMl0pL2xlbmd0aChnbG0ucHJlZCkKfQptZWFuKG1lYW4udmFsaWRhdGlvbikKI3NsaWdodGx5IHdvcnNlLCBub3QgdGhhdCBtdWNoCmBgYAoKKio2KioKYGBge3J9CiNhKQpzZXQuc2VlZCgxKQpnbG0uZml0PC1nbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZSwgZGF0YT1EZWZhdWx0LCBmYW1pbHkgPSBiaW5vbWlhbCkKc3VtbWFyeShnbG0uZml0KSRjb2VmZmljaWVudHMKYGBgCgpgYGB7cn0KI2IpCmJvb3QuZm4gPC1mdW5jdGlvbihkYXRhLGluZGV4KXsKICByZXR1cm4oc3VtbWFyeShnbG0oZGVmYXVsdH5pbmNvbWUrYmFsYW5jZSwgZGF0YT1kYXRhLCBmYW1pbHkgPSBiaW5vbWlhbCxzdWJzZXQ9aW5kZXgpKSRjb2VmZmljaWVudHNbLDJdKQp9CmBgYAoKYGBge3J9CiNjKQpib290KERlZmF1bHQsYm9vdC5mbixSPTEwMDApCmBgYAoKCioqNyoqCgpgYGB7cn0KI2EpCmdsbS5maXQ8LWdsbShkZWZhdWx0fmJhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwpCiNiKQpnbG0uZml0PC1nbG0oZGVmYXVsdH5iYWxhbmNlLCBkYXRhPURlZmF1bHQsIGZhbWlseSA9IGJpbm9taWFsLHN1YnNldD0tMSwpCiNjKQpwcmVkaWN0LmdsbShnbG0uZml0LERlZmF1bHRbMSxdLHR5cGU9InJlc3BvbnNlIik+MC41CiNkKQpwcmVkLnJlcyA9IHJlcCgwLGRpbShEZWZhdWx0KVsxXSkKZm9yKGkgaW4gMTpkaW0oRGVmYXVsdClbMV0pewogIGdsbS5maXQ8LWdsbShkZWZhdWx0fmJhbGFuY2UsIGRhdGE9RGVmYXVsdCwgZmFtaWx5ID0gYmlub21pYWwsc3Vic2V0PS1pLCkKICBpZigocHJlZGljdC5nbG0oZ2xtLmZpdCxEZWZhdWx0W2ksXSx0eXBlPSJyZXNwb25zZSIpPjAuNSkgIT0gRGVmYXVsdFtpLF0kZGVmYXVsdCl7CiAgICBwcmVkLnJlc1tpXT0xCiAgfQp9CiN0aGlzIGlzIHdyb25nIGJ1dCBmdWNrIGl0IGl0IHRha2VzIHRvbyBtdWNoIHRpbWUgdG8gcnVuCmBgYAoKKiogOCAqKgoKYGBge3J9CiNhKQpzZXQuc2VlZCgxKQp5PXJub3JtKDEwMCkKeD1ybm9ybSgxMDApCnk9eC0yKnheMitybm9ybSgxMDApCiNiKQpwbG90KHgseSkKI2MpCkRhdGE8LWRhdGEuZnJhbWUoeCx5KQpjdi5nbG0oRGF0YSxnbG0oeX54KSkkZGVsdGEKY3YuZ2xtKERhdGEsZ2xtKHl+cG9seSh4LDIpKSkkZGVsdGEKY3YuZ2xtKERhdGEsZ2xtKHl+cG9seSh4LDMpKSkkZGVsdGEKY3YuZ2xtKERhdGEsZ2xtKHl+cG9seSh4LDQpKSkkZGVsdGEKI2QpCnNldC5zZWVkKDUwKQpjdi5nbG0oRGF0YSxnbG0oeX54KSkkZGVsdGEKY3YuZ2xtKERhdGEsZ2xtKHl+cG9seSh4LDIpKSkkZGVsdGEKY3YuZ2xtKERhdGEsZ2xtKHl+cG9seSh4LDMpKSkkZGVsdGEKY3YuZ2xtKERhdGEsZ2xtKHl+cG9seSh4LDQpKSkkZGVsdGEKI2kgZGlkbnQgcnVuIHRoZSBybm9ybSBmdW5jdGlvbiBhZ2FpbgojZSkKI3lhcAojZikKc3VtbWFyeShnbG0oeX5wb2x5KHgsMikpKQpzdW1tYXJ5KGdsbSh5fnBvbHkoeCwzKSkpCnN1bW1hcnkoZ2xtKHl+cG9seSh4LDQpKSkKYGBgCgoqKiA5ICoqCgpgYGB7cn0KbGlicmFyeShNQVNTKQphdHRhY2goQm9zdG9uKQpzdW1tYXJ5KEJvc3RvbikKYGBgCgpgYGB7cn0KI2EpCm1lYW4obWVkdikKI2IpCnNkKG1lZHYpL0koNTA2XjAuNSkKI2MpCmJvb3QuZm4gPC0gZnVuY3Rpb24oZGF0YSxpbmRleCl7CiAgcmV0dXJuKG1lYW4oZGF0YVtpbmRleF0pKQp9CmJvb3QobWVkdixib290LmZuLDEwMDApCiNjKQojYm9yZWQKYGBgCgoK</div>
 
 
 

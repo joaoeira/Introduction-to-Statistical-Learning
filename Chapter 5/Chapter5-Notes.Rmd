@@ -84,3 +84,114 @@ $$SE_{B}(\hat{\alpha}) = \sqrt{\frac{1}{B-1} \sum^B_{r=1} \left(  \hat{\alpha}^{
 This serves as an estimate of the standard error of $\hat{\alpha}$ estiamted from the original data set.
 
 # Lab: Cross-Validation and the Bootstrap
+
+## The Validation Set Approach
+
+```{r}
+library(ISLR)
+attach(Auto)
+set.seed(1)
+train=sample(392,196)
+```
+
+```{r}
+lm.fit=lm(mpg~horsepower,data=Auto,subset=train)
+mean((mpg-predict(lm.fit,Auto))[-train]^2) ##MSE
+```
+
+```{r}
+lm.fit2=lm(mpg~poly(horsepower,2),data=Auto,subset=train)
+mean((mpg-predict(lm.fit2,Auto))[-train]^2) ##MSE
+lm.fit3=lm(mpg~poly(horsepower,3),data=Auto,subset=train)
+mean((mpg-predict(lm.fit3,Auto))[-train]^2) ##MSE
+```
+
+```{r}
+set.seed(2)
+train<-sample(392,196)
+
+#using a different randomly selected sample of observations
+lm.fit=lm(mpg~horsepower,data=Auto,subset=train)
+mean((mpg-predict(lm.fit,Auto))[-train]^2) ##MSE
+lm.fit2=lm(mpg~poly(horsepower,2),data=Auto,subset=train)
+mean((mpg-predict(lm.fit2,Auto))[-train]^2) ##MSE
+lm.fit3=lm(mpg~poly(horsepower,3),data=Auto,subset=train)
+mean((mpg-predict(lm.fit3,Auto))[-train]^2) ##MSE
+```
+
+## Leave-One-Out Cross Validation
+
+**glm()** without any family (remember **family="binomial"** gave you logistic regression) gives you linear regression. You should use **glm()** for linear regression because it has extensions that allow you to use cross validation out of the box using **cv.glm()**
+
+```{r}
+library(boot)
+glm.fit<-glm(mpg~horsepower,data=Auto)
+cv.err<-cv.glm(Auto,glm.fit)
+cv.err$delta
+```
+
+```{r}
+cv.error<-rep(0,5)
+for(i in 1:5){
+  glm.fit<-glm(mpg~poly(horsepower,i),data=Auto)
+  cv.error[i]<-cv.glm(Auto,glm.fit)$delta[1]
+}
+cv.error
+plot(cv.error) #2 is good enough, as seen earlier
+```
+
+## k-Fold Cross-Validation
+```{r}
+set.seed(17)
+cv.error.10=rep(0,10)
+for(i in 1:10){
+  glm.fit=glm(mpg~poly(horsepower,i),data=Auto)
+  cv.error.10[i]=cv.glm(Auto,glm.fit,K=10)$delta[1]
+}
+cv.error.10
+plot(cv.error.10)
+
+```
+
+When we perform k-fold CV the two numbers associated with **delta** differ slightly. THe first is the standard k-fold CV estiamte and the second is the bias-corrected version (in this example they're similar)
+
+##The Bootstrap
+Performing a bootstrap analysis in R entails only two steps. First we must create a function that computes the statistic of interest. Second, we use the **boot()** function to perform the bootstrap by repeatedly sampling observations from the data set with replacement
+
+```{r}
+alpha.fn=function(data,index){
+  X=data$X[index]
+  Y=data$Y[index]
+  return((var(Y)-cov(X,Y))/(var(X)+var(Y)-2*cov(X,Y)))
+}
+
+alpha.fn(Portfolio,1:100)
+```
+
+```{r}
+set.seed(1)
+alpha.fn(Portfolio,sample(100,100,replace=T))
+#we can implement a bootstrap analysis by forming this command many times
+#but we can use the boot() function instead to automate this
+boot(Portfolio,alpha.fn,R=1000)
+```
+
+```{r}
+boot.fn=function(data,index){
+  return(coef(lm(mpg~horsepower,data=data,subset=index)))
+}
+boot.fn(Auto,1:392)
+set.seed(1)
+boot.fn(Auto,sample(392,392,replace=T))
+boot.fn(Auto,sample(392,392,replace=T))
+boot(Auto,boot.fn,1000)
+```
+
+```{r}
+boot.fn=function(data,index){
+  coefficients(lm(mpg~horsepower+I(horsepower^2),data=data,subset=index))
+}
+set.seed(1)
+boot(Auto,boot.fn,1000)
+```
+
